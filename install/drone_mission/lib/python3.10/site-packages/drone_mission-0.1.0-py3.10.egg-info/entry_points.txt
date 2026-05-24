@@ -1,0 +1,3 @@
+[console_scripts]
+mission_controller = drone_mission.mission_controller:main
+

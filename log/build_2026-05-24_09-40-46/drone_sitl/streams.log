@@ -1,0 +1,35 @@
+[5.730s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_sitl': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_sitl/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_sitl build --build-base /home/enovo_my/autonomous_drone_system/build/drone_sitl/build install --record /home/enovo_my/autonomous_drone_system/build/drone_sitl/install.log --single-version-externally-managed install_data
+[6.865s] running egg_info
+[6.868s] creating ../../build/drone_sitl/drone_sitl.egg-info
+[6.870s] writing ../../build/drone_sitl/drone_sitl.egg-info/PKG-INFO
+[6.872s] writing dependency_links to ../../build/drone_sitl/drone_sitl.egg-info/dependency_links.txt
+[6.873s] writing entry points to ../../build/drone_sitl/drone_sitl.egg-info/entry_points.txt
+[6.874s] writing requirements to ../../build/drone_sitl/drone_sitl.egg-info/requires.txt
+[6.874s] writing top-level names to ../../build/drone_sitl/drone_sitl.egg-info/top_level.txt
+[6.875s] writing manifest file '../../build/drone_sitl/drone_sitl.egg-info/SOURCES.txt'
+[6.885s] reading manifest file '../../build/drone_sitl/drone_sitl.egg-info/SOURCES.txt'
+[6.891s] writing manifest file '../../build/drone_sitl/drone_sitl.egg-info/SOURCES.txt'
+[6.892s] running build
+[6.892s] running build_py
+[6.899s] creating /home/enovo_my/autonomous_drone_system/build/drone_sitl/build
+[6.901s] creating /home/enovo_my/autonomous_drone_system/build/drone_sitl/build/lib
+[6.902s] creating /home/enovo_my/autonomous_drone_system/build/drone_sitl/build/lib/drone_sitl
+[6.903s] copying drone_sitl/__init__.py -> /home/enovo_my/autonomous_drone_system/build/drone_sitl/build/lib/drone_sitl
+[6.904s] running install
+[6.915s] running install_lib
+[6.918s] creating /home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages/drone_sitl
+[6.919s] copying /home/enovo_my/autonomous_drone_system/build/drone_sitl/build/lib/drone_sitl/__init__.py -> /home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages/drone_sitl
+[6.932s] byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages/drone_sitl/__init__.py to __init__.cpython-310.pyc
+[6.949s] running install_data
+[6.949s] creating /home/enovo_my/autonomous_drone_system/install/drone_sitl/share/ament_index
+[6.949s] creating /home/enovo_my/autonomous_drone_system/install/drone_sitl/share/ament_index/resource_index
+[6.950s] creating /home/enovo_my/autonomous_drone_system/install/drone_sitl/share/ament_index/resource_index/packages
+[6.950s] copying resource/drone_sitl -> /home/enovo_my/autonomous_drone_system/install/drone_sitl/share/ament_index/resource_index/packages
+[6.951s] copying package.xml -> /home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl
+[6.978s] creating /home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/launch
+[6.985s] copying launch/sitl_full.launch.py -> /home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/launch
+[6.985s] running install_egg_info
+[7.012s] Copying ../../build/drone_sitl/drone_sitl.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages/drone_sitl-0.1.0-py3.10.egg-info
+[7.021s] running install_scripts
+[7.138s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_sitl/install.log'
+[7.357s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_sitl' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_sitl/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_sitl build --build-base /home/enovo_my/autonomous_drone_system/build/drone_sitl/build install --record /home/enovo_my/autonomous_drone_system/build/drone_sitl/install.log --single-version-externally-managed install_data

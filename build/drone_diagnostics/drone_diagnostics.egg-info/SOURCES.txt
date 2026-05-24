@@ -1,0 +1,16 @@
+package.xml
+setup.cfg
+setup.py
+../../build/drone_diagnostics/drone_diagnostics.egg-info/PKG-INFO
+../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt
+../../build/drone_diagnostics/drone_diagnostics.egg-info/dependency_links.txt
+../../build/drone_diagnostics/drone_diagnostics.egg-info/entry_points.txt
+../../build/drone_diagnostics/drone_diagnostics.egg-info/requires.txt
+../../build/drone_diagnostics/drone_diagnostics.egg-info/top_level.txt
+../../build/drone_diagnostics/drone_diagnostics.egg-info/zip-safe
+drone_diagnostics/__init__.py
+drone_diagnostics/diagnostics_node.py
+resource/drone_diagnostics
+test/test_copyright.py
+test/test_flake8.py
+test/test_pep257.py

@@ -1,0 +1,3 @@
+[console_scripts]
+drone_diagnostics = drone_diagnostics.diagnostics_node:main
+

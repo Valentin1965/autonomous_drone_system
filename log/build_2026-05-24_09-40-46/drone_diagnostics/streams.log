@@ -1,0 +1,37 @@
+[5.787s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_diagnostics build --build-base /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build install --record /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log --single-version-externally-managed install_data
+[7.014s] running egg_info
+[7.017s] creating ../../build/drone_diagnostics/drone_diagnostics.egg-info
+[7.025s] writing ../../build/drone_diagnostics/drone_diagnostics.egg-info/PKG-INFO
+[7.026s] writing dependency_links to ../../build/drone_diagnostics/drone_diagnostics.egg-info/dependency_links.txt
+[7.026s] writing entry points to ../../build/drone_diagnostics/drone_diagnostics.egg-info/entry_points.txt
+[7.026s] writing requirements to ../../build/drone_diagnostics/drone_diagnostics.egg-info/requires.txt
+[7.027s] writing top-level names to ../../build/drone_diagnostics/drone_diagnostics.egg-info/top_level.txt
+[7.052s] writing manifest file '../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt'
+[7.053s] reading manifest file '../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt'
+[7.053s] writing manifest file '../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt'
+[7.054s] running build
+[7.054s] running build_py
+[7.054s] creating /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build
+[7.054s] creating /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build/lib
+[7.055s] creating /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build/lib/drone_diagnostics
+[7.055s] copying drone_diagnostics/__init__.py -> /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build/lib/drone_diagnostics
+[7.055s] copying drone_diagnostics/diagnostics_node.py -> /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build/lib/drone_diagnostics
+[7.056s] running install
+[7.056s] running install_lib
+[7.070s] creating /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics
+[7.071s] copying /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build/lib/drone_diagnostics/__init__.py -> /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics
+[7.072s] copying /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build/lib/drone_diagnostics/diagnostics_node.py -> /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics
+[7.072s] byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics/__init__.py to __init__.cpython-310.pyc
+[7.073s] byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics/diagnostics_node.py to diagnostics_node.cpython-310.pyc
+[7.073s] running install_data
+[7.073s] creating /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/ament_index
+[7.074s] creating /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/ament_index/resource_index
+[7.074s] creating /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/ament_index/resource_index/packages
+[7.074s] copying resource/drone_diagnostics -> /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/ament_index/resource_index/packages
+[7.075s] copying package.xml -> /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics
+[7.075s] running install_egg_info
+[7.078s] Copying ../../build/drone_diagnostics/drone_diagnostics.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics-0.1.0-py3.10.egg-info
+[7.086s] running install_scripts
+[7.186s] Installing drone_diagnostics script to /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/drone_diagnostics
+[7.189s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log'
+[7.332s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_diagnostics build --build-base /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build install --record /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log --single-version-externally-managed install_data

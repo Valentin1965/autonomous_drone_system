@@ -1,0 +1,3 @@
+[console_scripts]
+rtk_monitor = drone_rtk.rtk_monitor:main
+

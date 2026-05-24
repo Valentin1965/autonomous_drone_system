@@ -1,0 +1,35 @@
+running egg_info
+creating ../../build/drone_rtk/drone_rtk.egg-info
+writing ../../build/drone_rtk/drone_rtk.egg-info/PKG-INFO
+writing dependency_links to ../../build/drone_rtk/drone_rtk.egg-info/dependency_links.txt
+writing entry points to ../../build/drone_rtk/drone_rtk.egg-info/entry_points.txt
+writing requirements to ../../build/drone_rtk/drone_rtk.egg-info/requires.txt
+writing top-level names to ../../build/drone_rtk/drone_rtk.egg-info/top_level.txt
+writing manifest file '../../build/drone_rtk/drone_rtk.egg-info/SOURCES.txt'
+reading manifest file '../../build/drone_rtk/drone_rtk.egg-info/SOURCES.txt'
+writing manifest file '../../build/drone_rtk/drone_rtk.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/enovo_my/autonomous_drone_system/build/drone_rtk/build
+creating /home/enovo_my/autonomous_drone_system/build/drone_rtk/build/lib
+creating /home/enovo_my/autonomous_drone_system/build/drone_rtk/build/lib/drone_rtk
+copying drone_rtk/__init__.py -> /home/enovo_my/autonomous_drone_system/build/drone_rtk/build/lib/drone_rtk
+copying drone_rtk/rtk_monitor.py -> /home/enovo_my/autonomous_drone_system/build/drone_rtk/build/lib/drone_rtk
+running install
+running install_lib
+creating /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk
+copying /home/enovo_my/autonomous_drone_system/build/drone_rtk/build/lib/drone_rtk/__init__.py -> /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk
+copying /home/enovo_my/autonomous_drone_system/build/drone_rtk/build/lib/drone_rtk/rtk_monitor.py -> /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk
+byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk/rtk_monitor.py to rtk_monitor.cpython-310.pyc
+running install_data
+creating /home/enovo_my/autonomous_drone_system/install/drone_rtk/share/ament_index
+creating /home/enovo_my/autonomous_drone_system/install/drone_rtk/share/ament_index/resource_index
+creating /home/enovo_my/autonomous_drone_system/install/drone_rtk/share/ament_index/resource_index/packages
+copying resource/drone_rtk -> /home/enovo_my/autonomous_drone_system/install/drone_rtk/share/ament_index/resource_index/packages
+copying package.xml -> /home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk
+running install_egg_info
+Copying ../../build/drone_rtk/drone_rtk.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk-0.1.0-py3.10.egg-info
+running install_scripts
+Installing rtk_monitor script to /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/drone_rtk
+writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_rtk/install.log'

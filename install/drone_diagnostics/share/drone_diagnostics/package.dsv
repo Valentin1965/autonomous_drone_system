@@ -1,0 +1,6 @@
+source;share/drone_diagnostics/hook/pythonpath.ps1
+source;share/drone_diagnostics/hook/pythonpath.dsv
+source;share/drone_diagnostics/hook/pythonpath.sh
+source;share/drone_diagnostics/hook/ament_prefix_path.ps1
+source;share/drone_diagnostics/hook/ament_prefix_path.dsv
+source;share/drone_diagnostics/hook/ament_prefix_path.sh

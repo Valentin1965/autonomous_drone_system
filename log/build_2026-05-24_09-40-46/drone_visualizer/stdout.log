@@ -1,0 +1,35 @@
+running egg_info
+creating ../../build/drone_visualizer/drone_visualizer.egg-info
+writing ../../build/drone_visualizer/drone_visualizer.egg-info/PKG-INFO
+writing dependency_links to ../../build/drone_visualizer/drone_visualizer.egg-info/dependency_links.txt
+writing entry points to ../../build/drone_visualizer/drone_visualizer.egg-info/entry_points.txt
+writing requirements to ../../build/drone_visualizer/drone_visualizer.egg-info/requires.txt
+writing top-level names to ../../build/drone_visualizer/drone_visualizer.egg-info/top_level.txt
+writing manifest file '../../build/drone_visualizer/drone_visualizer.egg-info/SOURCES.txt'
+reading manifest file '../../build/drone_visualizer/drone_visualizer.egg-info/SOURCES.txt'
+writing manifest file '../../build/drone_visualizer/drone_visualizer.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build
+creating /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build/lib
+creating /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build/lib/drone_visualizer
+copying drone_visualizer/__init__.py -> /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build/lib/drone_visualizer
+copying drone_visualizer/trajectory_visualizer.py -> /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build/lib/drone_visualizer
+running install
+running install_lib
+creating /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer
+copying /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build/lib/drone_visualizer/__init__.py -> /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer
+copying /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build/lib/drone_visualizer/trajectory_visualizer.py -> /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer
+byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer/trajectory_visualizer.py to trajectory_visualizer.cpython-310.pyc
+running install_data
+creating /home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/ament_index
+creating /home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/ament_index/resource_index
+creating /home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/ament_index/resource_index/packages
+copying resource/drone_visualizer -> /home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/ament_index/resource_index/packages
+copying package.xml -> /home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer
+running install_egg_info
+Copying ../../build/drone_visualizer/drone_visualizer.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer-0.1.0-py3.10.egg-info
+running install_scripts
+Installing trajectory_visualizer script to /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/drone_visualizer
+writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_visualizer/install.log'
