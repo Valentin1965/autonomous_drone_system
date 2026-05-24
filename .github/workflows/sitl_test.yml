@@ -1,0 +1,75 @@
+name: PX4 SITL Auto Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  sitl-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install ROS 2 Humble
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+
+      - name: Install PX4 SITL dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git python3-colcon-common-extensions \
+            gazebo gazebo-common gazebo-plugin-base \
+            libgazebo-dev protobuf-compiler
+
+      - name: Clone PX4
+        run: |
+          git clone https://github.com/PX4/PX4-Autopilot.git --depth 1
+          bash PX4-Autopilot/Tools/setup/ubuntu.sh
+
+      - name: Build PX4 SITL
+        run: |
+          cd PX4-Autopilot
+          make px4_sitl_default
+
+      - name: Build ROS2 workspace
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --event-handlers console_direct+
+
+      - name: Run SITL auto-test
+        timeout-minutes: 5
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+
+          # Запускаємо PX4 SITL у фоні
+          cd PX4-Autopilot
+          make px4_sitl_default gazebo &
+
+          sleep 10
+
+          # Запускаємо місію
+          ros2 run drone_mission mission_controller &
+
+          # Чекаємо waypoint
+          timeout=60
+          reached=0
+          while [ $timeout -gt 0 ]; do
+            if grep -q "Sending waypoint" <(ros2 topic echo -n 1 /mission_path 2>/dev/null); then
+              reached=1
+              break
+            fi
+            sleep 1
+            timeout=$((timeout-1))
+          done
+
+          if [ $reached -eq 1 ]; then
+            echo "WAYPOINT REACHED — TEST PASSED"
+          else
+            echo "WAYPOINT NOT REACHED — TEST FAILED"
+            exit 1
+          fi
