@@ -1,0 +1,39 @@
+name: ROS2 CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      ROS_DISTRO: humble
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup ROS 2
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ env.ROS_DISTRO }}
+
+      - name: Install colcon and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-colcon-common-extensions
+
+      - name: Build workspace
+        run: |
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          colcon build --event-handlers console_direct+
+
+      - name: Run tests
+        run: |
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          colcon test --event-handlers console_direct+
+          colcon test-result --verbose
