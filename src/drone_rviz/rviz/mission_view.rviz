@@ -1,0 +1,42 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Displays:
+    - Name: Grid
+      Class: rviz_default_plugins/Grid
+      Enabled: true
+
+    - Name: TF
+      Class: rviz_default_plugins/TF
+      Enabled: true
+
+    - Name: Trajectory
+      Class: rviz_default_plugins/Path
+      Topic: /trajectory
+      Enabled: true
+      Color: 255; 0; 0
+
+    - Name: Mission Path
+      Class: rviz_default_plugins/Path
+      Topic: /mission_path
+      Enabled: true
+      Color: 0; 255; 0
+
+    - Name: Drone Pose
+      Class: rviz_default_plugins/Pose
+      Topic: /setpoint_position
+      Enabled: true
+
+  Global Options:
+    Fixed Frame: map
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 30
+      Pitch: 0.5
+      Yaw: 0.5
