@@ -347,4 +347,16 @@ curl -X POST http://127.0.0.1:8080/api/set_mode \
 
 -d '{"mode":"body"}'
 
+Як використовувати:
+Bash# 1. Запуск симулятора
+python main.py --simulator
+
+# 2. Запуск з PX4 / SITL
+python main.py --px4
+
+# 3. Запуск тільки CV режиму (YOLO + Oak-D)
+python main.py --cv
+
+# 4. Повний режим (Flask + CV + можливість керування)
+python main.py --all
 
