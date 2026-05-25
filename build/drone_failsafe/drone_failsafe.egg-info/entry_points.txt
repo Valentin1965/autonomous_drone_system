@@ -1,0 +1,3 @@
+[console_scripts]
+drone_failsafe = drone_failsafe.failsafe_node:main
+

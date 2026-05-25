@@ -1,0 +1,35 @@
+running egg_info
+creating ../../build/drone_rviz/drone_rviz.egg-info
+writing ../../build/drone_rviz/drone_rviz.egg-info/PKG-INFO
+writing dependency_links to ../../build/drone_rviz/drone_rviz.egg-info/dependency_links.txt
+writing entry points to ../../build/drone_rviz/drone_rviz.egg-info/entry_points.txt
+writing requirements to ../../build/drone_rviz/drone_rviz.egg-info/requires.txt
+writing top-level names to ../../build/drone_rviz/drone_rviz.egg-info/top_level.txt
+writing manifest file '../../build/drone_rviz/drone_rviz.egg-info/SOURCES.txt'
+reading manifest file '../../build/drone_rviz/drone_rviz.egg-info/SOURCES.txt'
+writing manifest file '../../build/drone_rviz/drone_rviz.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/enovo_my/autonomous_drone_system/build/drone_rviz/build
+creating /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib
+creating /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib/drone_rviz
+copying drone_rviz/__init__.py -> /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib/drone_rviz
+running install
+running install_lib
+creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz
+copying /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib/drone_rviz/__init__.py -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz
+byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz/__init__.py to __init__.cpython-310.pyc
+running install_data
+creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index
+creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index/resource_index
+creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index/resource_index/packages
+copying resource/drone_rviz -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index/resource_index/packages
+copying package.xml -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz
+creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/rviz
+copying rviz/mission_view.rviz -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/rviz
+creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/launch
+copying launch/rviz.launch.py -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/launch
+running install_egg_info
+Copying ../../build/drone_rviz/drone_rviz.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz-0.1.0-py3.10.egg-info
+running install_scripts
+writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_rviz/install.log'

@@ -1,0 +1,21 @@
+[8.238s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_visualizer': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_visualizer/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_visualizer build --build-base /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build install --record /home/enovo_my/autonomous_drone_system/build/drone_visualizer/install.log --single-version-externally-managed install_data
+[10.472s] running egg_info
+[10.476s] writing ../../build/drone_visualizer/drone_visualizer.egg-info/PKG-INFO
+[10.478s] writing dependency_links to ../../build/drone_visualizer/drone_visualizer.egg-info/dependency_links.txt
+[10.479s] writing entry points to ../../build/drone_visualizer/drone_visualizer.egg-info/entry_points.txt
+[10.480s] writing requirements to ../../build/drone_visualizer/drone_visualizer.egg-info/requires.txt
+[10.480s] writing top-level names to ../../build/drone_visualizer/drone_visualizer.egg-info/top_level.txt
+[10.531s] reading manifest file '../../build/drone_visualizer/drone_visualizer.egg-info/SOURCES.txt'
+[10.539s] writing manifest file '../../build/drone_visualizer/drone_visualizer.egg-info/SOURCES.txt'
+[10.540s] running build
+[10.540s] running build_py
+[10.549s] running install
+[10.549s] running install_lib
+[10.556s] running install_data
+[10.557s] running install_egg_info
+[10.571s] removing '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer-0.1.0-py3.10.egg-info' (and everything under it)
+[10.571s] Copying ../../build/drone_visualizer/drone_visualizer.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages/drone_visualizer-0.1.0-py3.10.egg-info
+[10.571s] running install_scripts
+[10.734s] Installing trajectory_visualizer script to /home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/drone_visualizer
+[10.735s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_visualizer/install.log'
+[10.922s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_visualizer' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_visualizer/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_visualizer build --build-base /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build install --record /home/enovo_my/autonomous_drone_system/build/drone_visualizer/install.log --single-version-externally-managed install_data

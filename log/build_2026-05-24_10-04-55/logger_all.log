@@ -1,0 +1,429 @@
+[0.838s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.838s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=8, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x73e0ac44b670>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x73e0ac5ac610>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x73e0ac5ac610>>, mixin_verb=('build',))
+[1.706s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[1.706s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[1.706s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[1.706s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[1.706s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[1.706s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[1.706s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/enovo_my/autonomous_drone_system'
+[1.707s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[1.707s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[1.707s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[1.708s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[1.708s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[1.708s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[1.708s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[1.708s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[1.708s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[1.738s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[1.738s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[1.738s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[1.738s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[1.738s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[1.739s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[1.740s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[1.740s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[1.741s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[1.741s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[1.741s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[1.741s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[1.741s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[1.741s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ignore', 'ignore_ament_install']
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore'
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore_ament_install'
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_pkg']
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_pkg'
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_meta']
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_meta'
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ros']
+[1.742s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ros'
+[1.743s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['cmake', 'python']
+[1.743s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'cmake'
+[1.743s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python'
+[1.743s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['python_setup_py']
+[1.743s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python_setup_py'
+[1.744s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extensions ['ignore', 'ignore_ament_install']
+[1.744s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extension 'ignore'
+[1.744s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extension 'ignore_ament_install'
+[1.744s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extensions ['colcon_pkg']
+[1.745s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extension 'colcon_pkg'
+[1.745s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extensions ['colcon_meta']
+[1.745s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extension 'colcon_meta'
+[1.745s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extensions ['ros']
+[1.745s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_diagnostics) by extension 'ros'
+[1.752s] DEBUG:colcon.colcon_core.package_identification:Package 'src/drone_diagnostics' with type 'ros.ament_python' and name 'drone_diagnostics'
+[1.753s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extensions ['ignore', 'ignore_ament_install']
+[1.754s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extension 'ignore'
+[1.754s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extension 'ignore_ament_install'
+[1.754s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extensions ['colcon_pkg']
+[1.754s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extension 'colcon_pkg'
+[1.754s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extensions ['colcon_meta']
+[1.754s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extension 'colcon_meta'
+[1.754s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extensions ['ros']
+[1.755s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_failsafe) by extension 'ros'
+[1.759s] DEBUG:colcon.colcon_core.package_identification:Package 'src/drone_failsafe' with type 'ros.ament_python' and name 'drone_failsafe'
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extensions ['ignore', 'ignore_ament_install']
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extension 'ignore'
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extension 'ignore_ament_install'
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extensions ['colcon_pkg']
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extension 'colcon_pkg'
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extensions ['colcon_meta']
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extension 'colcon_meta'
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extensions ['ros']
+[1.761s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_mission) by extension 'ros'
+[1.764s] DEBUG:colcon.colcon_core.package_identification:Package 'src/drone_mission' with type 'ros.ament_python' and name 'drone_mission'
+[1.765s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extensions ['ignore', 'ignore_ament_install']
+[1.765s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extension 'ignore'
+[1.765s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extension 'ignore_ament_install'
+[1.765s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extensions ['colcon_pkg']
+[1.765s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extension 'colcon_pkg'
+[1.765s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extensions ['colcon_meta']
+[1.765s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extension 'colcon_meta'
+[1.766s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extensions ['ros']
+[1.766s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rtk) by extension 'ros'
+[1.768s] DEBUG:colcon.colcon_core.package_identification:Package 'src/drone_rtk' with type 'ros.ament_python' and name 'drone_rtk'
+[1.768s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extensions ['ignore', 'ignore_ament_install']
+[1.768s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extension 'ignore'
+[1.768s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extension 'ignore_ament_install'
+[1.768s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extensions ['colcon_pkg']
+[1.768s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extension 'colcon_pkg'
+[1.769s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extensions ['colcon_meta']
+[1.769s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extension 'colcon_meta'
+[1.769s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extensions ['ros']
+[1.769s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_rviz) by extension 'ros'
+[1.770s] DEBUG:colcon.colcon_core.package_identification:Package 'src/drone_rviz' with type 'ros.ament_python' and name 'drone_rviz'
+[1.771s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extensions ['ignore', 'ignore_ament_install']
+[1.771s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extension 'ignore'
+[1.772s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extension 'ignore_ament_install'
+[1.772s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extensions ['colcon_pkg']
+[1.772s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extension 'colcon_pkg'
+[1.772s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extensions ['colcon_meta']
+[1.772s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extension 'colcon_meta'
+[1.772s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extensions ['ros']
+[1.772s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_sitl) by extension 'ros'
+[1.774s] DEBUG:colcon.colcon_core.package_identification:Package 'src/drone_sitl' with type 'ros.ament_python' and name 'drone_sitl'
+[1.774s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extensions ['ignore', 'ignore_ament_install']
+[1.774s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extension 'ignore'
+[1.775s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extension 'ignore_ament_install'
+[1.775s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extensions ['colcon_pkg']
+[1.775s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extension 'colcon_pkg'
+[1.775s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extensions ['colcon_meta']
+[1.775s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extension 'colcon_meta'
+[1.775s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extensions ['ros']
+[1.776s] Level 1:colcon.colcon_core.package_identification:_identify(src/drone_visualizer) by extension 'ros'
+[1.778s] DEBUG:colcon.colcon_core.package_identification:Package 'src/drone_visualizer' with type 'ros.ament_python' and name 'drone_visualizer'
+[1.778s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[1.778s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[1.778s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[1.778s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[1.778s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[1.872s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[1.872s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[1.883s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 5 installed packages in /home/enovo_my/agro_aero_vision/ros2_ws/install
+[1.887s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 282 installed packages in /opt/ros/humble
+[1.891s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'cmake_args' from command line to 'None'
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'cmake_target' from command line to 'None'
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'cmake_clean_cache' from command line to 'False'
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'cmake_clean_first' from command line to 'False'
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'cmake_force_configure' from command line to 'False'
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'ament_cmake_args' from command line to 'None'
+[2.095s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'catkin_cmake_args' from command line to 'None'
+[2.096s] Level 5:colcon.colcon_core.verb:set package 'drone_diagnostics' build argument 'catkin_skip_building_tests' from command line to 'False'
+[2.096s] DEBUG:colcon.colcon_core.verb:Building package 'drone_diagnostics' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/enovo_my/autonomous_drone_system/build/drone_diagnostics', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics', 'merge_install': False, 'path': '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics', 'symlink_install': False, 'test_result_base': None}
+[2.096s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'cmake_args' from command line to 'None'
+[2.096s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'cmake_target' from command line to 'None'
+[2.097s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[2.097s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'cmake_clean_cache' from command line to 'False'
+[2.097s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'cmake_clean_first' from command line to 'False'
+[2.097s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'cmake_force_configure' from command line to 'False'
+[2.097s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'ament_cmake_args' from command line to 'None'
+[2.097s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'catkin_cmake_args' from command line to 'None'
+[2.097s] Level 5:colcon.colcon_core.verb:set package 'drone_failsafe' build argument 'catkin_skip_building_tests' from command line to 'False'
+[2.097s] DEBUG:colcon.colcon_core.verb:Building package 'drone_failsafe' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/enovo_my/autonomous_drone_system/build/drone_failsafe', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/enovo_my/autonomous_drone_system/install/drone_failsafe', 'merge_install': False, 'path': '/home/enovo_my/autonomous_drone_system/src/drone_failsafe', 'symlink_install': False, 'test_result_base': None}
+[2.098s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'cmake_args' from command line to 'None'
+[2.098s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'cmake_target' from command line to 'None'
+[2.098s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[2.098s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'cmake_clean_cache' from command line to 'False'
+[2.098s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'cmake_clean_first' from command line to 'False'
+[2.098s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'cmake_force_configure' from command line to 'False'
+[2.099s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'ament_cmake_args' from command line to 'None'
+[2.099s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'catkin_cmake_args' from command line to 'None'
+[2.099s] Level 5:colcon.colcon_core.verb:set package 'drone_mission' build argument 'catkin_skip_building_tests' from command line to 'False'
+[2.099s] DEBUG:colcon.colcon_core.verb:Building package 'drone_mission' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/enovo_my/autonomous_drone_system/build/drone_mission', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/enovo_my/autonomous_drone_system/install/drone_mission', 'merge_install': False, 'path': '/home/enovo_my/autonomous_drone_system/src/drone_mission', 'symlink_install': False, 'test_result_base': None}
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'cmake_args' from command line to 'None'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'cmake_target' from command line to 'None'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'cmake_clean_cache' from command line to 'False'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'cmake_clean_first' from command line to 'False'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'cmake_force_configure' from command line to 'False'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'ament_cmake_args' from command line to 'None'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'catkin_cmake_args' from command line to 'None'
+[2.100s] Level 5:colcon.colcon_core.verb:set package 'drone_rtk' build argument 'catkin_skip_building_tests' from command line to 'False'
+[2.101s] DEBUG:colcon.colcon_core.verb:Building package 'drone_rtk' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/enovo_my/autonomous_drone_system/build/drone_rtk', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/enovo_my/autonomous_drone_system/install/drone_rtk', 'merge_install': False, 'path': '/home/enovo_my/autonomous_drone_system/src/drone_rtk', 'symlink_install': False, 'test_result_base': None}
+[2.101s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'cmake_args' from command line to 'None'
+[2.101s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'cmake_target' from command line to 'None'
+[2.101s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[2.102s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'cmake_clean_cache' from command line to 'False'
+[2.102s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'cmake_clean_first' from command line to 'False'
+[2.102s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'cmake_force_configure' from command line to 'False'
+[2.102s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'ament_cmake_args' from command line to 'None'
+[2.102s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'catkin_cmake_args' from command line to 'None'
+[2.102s] Level 5:colcon.colcon_core.verb:set package 'drone_rviz' build argument 'catkin_skip_building_tests' from command line to 'False'
+[2.102s] DEBUG:colcon.colcon_core.verb:Building package 'drone_rviz' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/enovo_my/autonomous_drone_system/build/drone_rviz', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/enovo_my/autonomous_drone_system/install/drone_rviz', 'merge_install': False, 'path': '/home/enovo_my/autonomous_drone_system/src/drone_rviz', 'symlink_install': False, 'test_result_base': None}
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'cmake_args' from command line to 'None'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'cmake_target' from command line to 'None'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'cmake_clean_cache' from command line to 'False'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'cmake_clean_first' from command line to 'False'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'cmake_force_configure' from command line to 'False'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'ament_cmake_args' from command line to 'None'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'catkin_cmake_args' from command line to 'None'
+[2.103s] Level 5:colcon.colcon_core.verb:set package 'drone_sitl' build argument 'catkin_skip_building_tests' from command line to 'False'
+[2.103s] DEBUG:colcon.colcon_core.verb:Building package 'drone_sitl' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/enovo_my/autonomous_drone_system/build/drone_sitl', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/enovo_my/autonomous_drone_system/install/drone_sitl', 'merge_install': False, 'path': '/home/enovo_my/autonomous_drone_system/src/drone_sitl', 'symlink_install': False, 'test_result_base': None}
+[2.105s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'cmake_args' from command line to 'None'
+[2.105s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'cmake_target' from command line to 'None'
+[2.105s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[2.105s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'cmake_clean_cache' from command line to 'False'
+[2.105s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'cmake_clean_first' from command line to 'False'
+[2.106s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'cmake_force_configure' from command line to 'False'
+[2.106s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'ament_cmake_args' from command line to 'None'
+[2.106s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'catkin_cmake_args' from command line to 'None'
+[2.106s] Level 5:colcon.colcon_core.verb:set package 'drone_visualizer' build argument 'catkin_skip_building_tests' from command line to 'False'
+[2.106s] DEBUG:colcon.colcon_core.verb:Building package 'drone_visualizer' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/enovo_my/autonomous_drone_system/build/drone_visualizer', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/enovo_my/autonomous_drone_system/install/drone_visualizer', 'merge_install': False, 'path': '/home/enovo_my/autonomous_drone_system/src/drone_visualizer', 'symlink_install': False, 'test_result_base': None}
+[2.107s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[2.109s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[2.110s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics' with build type 'ament_python'
+[2.110s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_diagnostics', 'ament_prefix_path')
+[2.129s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[2.129s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/hook/ament_prefix_path.ps1'
+[2.131s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/hook/ament_prefix_path.dsv'
+[2.133s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/hook/ament_prefix_path.sh'
+[2.136s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[2.136s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[2.149s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/enovo_my/autonomous_drone_system/src/drone_failsafe' with build type 'ament_python'
+[2.149s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_failsafe', 'ament_prefix_path')
+[2.150s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/hook/ament_prefix_path.ps1'
+[2.154s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/hook/ament_prefix_path.dsv'
+[2.156s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/hook/ament_prefix_path.sh'
+[2.159s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[2.160s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[2.179s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/enovo_my/autonomous_drone_system/src/drone_mission' with build type 'ament_python'
+[2.180s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_mission', 'ament_prefix_path')
+[2.181s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/hook/ament_prefix_path.ps1'
+[2.183s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/hook/ament_prefix_path.dsv'
+[2.184s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/hook/ament_prefix_path.sh'
+[2.187s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[2.187s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[2.198s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/enovo_my/autonomous_drone_system/src/drone_rtk' with build type 'ament_python'
+[2.198s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_rtk', 'ament_prefix_path')
+[2.199s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/hook/ament_prefix_path.ps1'
+[2.202s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/hook/ament_prefix_path.dsv'
+[2.204s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/hook/ament_prefix_path.sh'
+[2.206s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[2.207s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[2.220s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/enovo_my/autonomous_drone_system/src/drone_rviz' with build type 'ament_python'
+[2.221s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_rviz', 'ament_prefix_path')
+[2.222s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/hook/ament_prefix_path.ps1'
+[2.231s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/hook/ament_prefix_path.dsv'
+[2.232s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/hook/ament_prefix_path.sh'
+[2.234s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[2.234s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[2.246s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/enovo_my/autonomous_drone_system/src/drone_sitl' with build type 'ament_python'
+[2.247s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_sitl', 'ament_prefix_path')
+[2.247s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/hook/ament_prefix_path.ps1'
+[2.250s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/hook/ament_prefix_path.dsv'
+[2.251s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/hook/ament_prefix_path.sh'
+[2.254s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[2.254s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[2.269s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/enovo_my/autonomous_drone_system/src/drone_visualizer' with build type 'ament_python'
+[2.270s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_visualizer', 'ament_prefix_path')
+[2.271s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/hook/ament_prefix_path.ps1'
+[2.274s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/hook/ament_prefix_path.dsv'
+[2.277s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/hook/ament_prefix_path.sh'
+[2.279s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[2.280s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[3.063s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics'
+[3.064s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[3.064s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[3.793s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/enovo_my/autonomous_drone_system/src/drone_failsafe'
+[3.794s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[3.794s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[4.517s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/enovo_my/autonomous_drone_system/src/drone_mission'
+[4.518s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[4.518s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[5.295s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/enovo_my/autonomous_drone_system/src/drone_rtk'
+[5.296s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[5.296s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[6.063s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/enovo_my/autonomous_drone_system/src/drone_rviz'
+[6.063s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[6.064s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[6.811s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/enovo_my/autonomous_drone_system/src/drone_sitl'
+[6.812s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[6.812s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[7.564s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/enovo_my/autonomous_drone_system/src/drone_visualizer'
+[7.565s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[7.565s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[10.508s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_visualizer': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_visualizer/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_visualizer build --build-base /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build install --record /home/enovo_my/autonomous_drone_system/build/drone_visualizer/install.log --single-version-externally-managed install_data
+[10.550s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_diagnostics build --build-base /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build install --record /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log --single-version-externally-managed install_data
+[10.553s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_sitl': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_sitl/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_sitl build --build-base /home/enovo_my/autonomous_drone_system/build/drone_sitl/build install --record /home/enovo_my/autonomous_drone_system/build/drone_sitl/install.log --single-version-externally-managed install_data
+[10.568s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_rtk': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rtk/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rtk build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rtk/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rtk/install.log --single-version-externally-managed install_data
+[10.615s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_rviz': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rviz/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rviz build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rviz/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rviz/install.log --single-version-externally-managed install_data
+[10.625s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_failsafe': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_failsafe/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_failsafe build --build-base /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build install --record /home/enovo_my/autonomous_drone_system/build/drone_failsafe/install.log --single-version-externally-managed install_data
+[10.628s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_mission': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_mission/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_mission/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_mission build --build-base /home/enovo_my/autonomous_drone_system/build/drone_mission/build install --record /home/enovo_my/autonomous_drone_system/build/drone_mission/install.log --single-version-externally-managed install_data
+[12.671s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_diagnostics build --build-base /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build install --record /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log --single-version-externally-managed install_data
+[12.733s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics' for CMake module files
+[12.736s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics' for CMake config files
+[12.776s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib'
+[12.777s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/bin'
+[12.777s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/pkgconfig/drone_diagnostics.pc'
+[12.778s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages'
+[12.778s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_diagnostics', 'pythonpath')
+[12.802s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/hook/pythonpath.ps1'
+[12.806s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/hook/pythonpath.dsv'
+[12.812s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/hook/pythonpath.sh'
+[12.821s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/bin'
+[12.822s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(drone_diagnostics)
+[12.823s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/package.ps1'
+[12.837s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/package.dsv'
+[12.845s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/package.sh'
+[12.853s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/package.bash'
+[12.859s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/drone_diagnostics/package.zsh'
+[12.864s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/share/colcon-core/packages/drone_diagnostics)
+[12.880s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rviz' for CMake module files
+[12.882s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rviz' for CMake config files
+[12.884s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rviz/lib'
+[12.886s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_rviz' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rviz/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rviz build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rviz/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rviz/install.log --single-version-externally-managed install_data
+[12.887s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rviz/bin'
+[12.887s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/pkgconfig/drone_rviz.pc'
+[12.888s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages'
+[12.888s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_rviz', 'pythonpath')
+[12.889s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/hook/pythonpath.ps1'
+[12.891s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/hook/pythonpath.dsv'
+[12.892s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/hook/pythonpath.sh'
+[12.895s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rviz/bin'
+[12.896s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(drone_rviz)
+[12.897s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/package.ps1'
+[12.902s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/package.dsv'
+[12.907s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/package.sh'
+[12.910s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/package.bash'
+[12.912s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/package.zsh'
+[12.914s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/enovo_my/autonomous_drone_system/install/drone_rviz/share/colcon-core/packages/drone_rviz)
+[12.921s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rtk' for CMake module files
+[12.924s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_rtk' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rtk/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rtk build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rtk/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rtk/install.log --single-version-externally-managed install_data
+[12.936s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rtk' for CMake config files
+[12.962s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib'
+[12.962s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rtk/bin'
+[12.962s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/pkgconfig/drone_rtk.pc'
+[12.963s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages'
+[12.963s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_rtk', 'pythonpath')
+[12.967s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/hook/pythonpath.ps1'
+[12.971s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/hook/pythonpath.dsv'
+[12.972s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/hook/pythonpath.sh'
+[12.985s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_rtk/bin'
+[12.985s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(drone_rtk)
+[12.995s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/package.ps1'
+[12.998s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/package.dsv'
+[13.000s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/package.sh'
+[13.016s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/package.bash'
+[13.018s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/drone_rtk/package.zsh'
+[13.019s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/enovo_my/autonomous_drone_system/install/drone_rtk/share/colcon-core/packages/drone_rtk)
+[13.080s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_failsafe' for CMake module files
+[13.082s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_failsafe' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_failsafe/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_failsafe build --build-base /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build install --record /home/enovo_my/autonomous_drone_system/build/drone_failsafe/install.log --single-version-externally-managed install_data
+[13.085s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_failsafe' for CMake config files
+[13.089s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib'
+[13.090s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/bin'
+[13.090s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/pkgconfig/drone_failsafe.pc'
+[13.091s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages'
+[13.091s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_failsafe', 'pythonpath')
+[13.092s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/hook/pythonpath.ps1'
+[13.095s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/hook/pythonpath.dsv'
+[13.105s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/hook/pythonpath.sh'
+[13.109s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/bin'
+[13.109s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(drone_failsafe)
+[13.110s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/package.ps1'
+[13.114s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/package.dsv'
+[13.116s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/package.sh'
+[13.118s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/package.bash'
+[13.119s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe/package.zsh'
+[13.121s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/colcon-core/packages/drone_failsafe)
+[13.137s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_sitl' for CMake module files
+[13.139s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_sitl' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_sitl/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_sitl build --build-base /home/enovo_my/autonomous_drone_system/build/drone_sitl/build install --record /home/enovo_my/autonomous_drone_system/build/drone_sitl/install.log --single-version-externally-managed install_data
+[13.143s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_sitl' for CMake config files
+[13.157s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_sitl/lib'
+[13.157s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_sitl/bin'
+[13.157s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/pkgconfig/drone_sitl.pc'
+[13.158s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_sitl/lib/python3.10/site-packages'
+[13.158s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_sitl', 'pythonpath')
+[13.159s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/hook/pythonpath.ps1'
+[13.161s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/hook/pythonpath.dsv'
+[13.163s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/hook/pythonpath.sh'
+[13.166s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_sitl/bin'
+[13.167s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(drone_sitl)
+[13.169s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/package.ps1'
+[13.172s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/package.dsv'
+[13.175s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/package.sh'
+[13.178s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/package.bash'
+[13.180s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/drone_sitl/package.zsh'
+[13.183s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/enovo_my/autonomous_drone_system/install/drone_sitl/share/colcon-core/packages/drone_sitl)
+[13.187s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_visualizer' for CMake module files
+[13.191s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_visualizer' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_visualizer/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_visualizer build --build-base /home/enovo_my/autonomous_drone_system/build/drone_visualizer/build install --record /home/enovo_my/autonomous_drone_system/build/drone_visualizer/install.log --single-version-externally-managed install_data
+[13.194s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_visualizer' for CMake config files
+[13.204s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib'
+[13.205s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/bin'
+[13.205s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/pkgconfig/drone_visualizer.pc'
+[13.206s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/lib/python3.10/site-packages'
+[13.206s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_visualizer', 'pythonpath')
+[13.206s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/hook/pythonpath.ps1'
+[13.208s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/hook/pythonpath.dsv'
+[13.210s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/hook/pythonpath.sh'
+[13.213s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/bin'
+[13.213s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(drone_visualizer)
+[13.215s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/package.ps1'
+[13.219s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/package.dsv'
+[13.221s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/package.sh'
+[13.222s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/package.bash'
+[13.224s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/drone_visualizer/package.zsh'
+[13.225s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/enovo_my/autonomous_drone_system/install/drone_visualizer/share/colcon-core/packages/drone_visualizer)
+[13.238s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_mission' for CMake module files
+[13.240s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_mission' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_mission/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_mission/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_mission build --build-base /home/enovo_my/autonomous_drone_system/build/drone_mission/build install --record /home/enovo_my/autonomous_drone_system/build/drone_mission/install.log --single-version-externally-managed install_data
+[13.244s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_mission' for CMake config files
+[13.257s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_mission/lib'
+[13.257s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_mission/bin'
+[13.257s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_mission/lib/pkgconfig/drone_mission.pc'
+[13.258s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_mission/lib/python3.10/site-packages'
+[13.258s] Level 1:colcon.colcon_core.shell:create_environment_hook('drone_mission', 'pythonpath')
+[13.259s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/hook/pythonpath.ps1'
+[13.260s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/hook/pythonpath.dsv'
+[13.261s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/hook/pythonpath.sh'
+[13.263s] Level 1:colcon.colcon_core.environment:checking '/home/enovo_my/autonomous_drone_system/install/drone_mission/bin'
+[13.264s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(drone_mission)
+[13.265s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/package.ps1'
+[13.269s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/package.dsv'
+[13.273s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/package.sh'
+[13.277s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/package.bash'
+[13.279s] INFO:colcon.colcon_core.shell:Creating package script '/home/enovo_my/autonomous_drone_system/install/drone_mission/share/drone_mission/package.zsh'
+[13.280s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/enovo_my/autonomous_drone_system/install/drone_mission/share/colcon-core/packages/drone_mission)
+[13.281s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[13.284s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[13.285s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[13.285s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[13.567s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.notify_send': Could not find 'notify-send'
+[13.567s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[13.568s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[13.568s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[13.569s] DEBUG:colcon.colcon_notification.desktop_notification.notify2:Failed to initialize notify2: org.freedesktop.DBus.Error.AccessDenied: Failed to connect to socket /run/user/1000/bus: Permission denied
+[13.569s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[13.570s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/enovo_my/autonomous_drone_system/install/local_setup.ps1'
+[13.575s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/enovo_my/autonomous_drone_system/install/_local_setup_util_ps1.py'
+[13.579s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/enovo_my/autonomous_drone_system/install/setup.ps1'
+[13.585s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/enovo_my/autonomous_drone_system/install/local_setup.sh'
+[13.588s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/enovo_my/autonomous_drone_system/install/_local_setup_util_sh.py'
+[13.590s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/enovo_my/autonomous_drone_system/install/setup.sh'
+[13.595s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/enovo_my/autonomous_drone_system/install/local_setup.bash'
+[13.597s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/enovo_my/autonomous_drone_system/install/setup.bash'
+[13.602s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/enovo_my/autonomous_drone_system/install/local_setup.zsh'
+[13.604s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/enovo_my/autonomous_drone_system/install/setup.zsh'

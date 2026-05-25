@@ -1,0 +1,7 @@
+pymavlink
+pyyaml
+opencv-python
+numpy
+flask
+ultralytics
+

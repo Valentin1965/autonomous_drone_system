@@ -1,0 +1,21 @@
+[8.436s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_diagnostics build --build-base /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build install --record /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log --single-version-externally-managed install_data
+[10.102s] running egg_info
+[10.105s] writing ../../build/drone_diagnostics/drone_diagnostics.egg-info/PKG-INFO
+[10.106s] writing dependency_links to ../../build/drone_diagnostics/drone_diagnostics.egg-info/dependency_links.txt
+[10.107s] writing entry points to ../../build/drone_diagnostics/drone_diagnostics.egg-info/entry_points.txt
+[10.107s] writing requirements to ../../build/drone_diagnostics/drone_diagnostics.egg-info/requires.txt
+[10.108s] writing top-level names to ../../build/drone_diagnostics/drone_diagnostics.egg-info/top_level.txt
+[10.134s] reading manifest file '../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt'
+[10.139s] writing manifest file '../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt'
+[10.139s] running build
+[10.140s] running build_py
+[10.140s] running install
+[10.141s] running install_lib
+[10.156s] running install_data
+[10.157s] running install_egg_info
+[10.169s] removing '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics-0.1.0-py3.10.egg-info' (and everything under it)
+[10.173s] Copying ../../build/drone_diagnostics/drone_diagnostics.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics-0.1.0-py3.10.egg-info
+[10.190s] running install_scripts
+[10.381s] Installing drone_diagnostics script to /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/drone_diagnostics
+[10.383s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log'
+[10.558s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_diagnostics' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_diagnostics build --build-base /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/build install --record /home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log --single-version-externally-managed install_data

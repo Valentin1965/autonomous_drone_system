@@ -1,0 +1,21 @@
+[8.368s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_rtk': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rtk/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rtk build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rtk/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rtk/install.log --single-version-externally-managed install_data
+[10.164s] running egg_info
+[10.175s] writing ../../build/drone_rtk/drone_rtk.egg-info/PKG-INFO
+[10.176s] writing dependency_links to ../../build/drone_rtk/drone_rtk.egg-info/dependency_links.txt
+[10.178s] writing entry points to ../../build/drone_rtk/drone_rtk.egg-info/entry_points.txt
+[10.179s] writing requirements to ../../build/drone_rtk/drone_rtk.egg-info/requires.txt
+[10.179s] writing top-level names to ../../build/drone_rtk/drone_rtk.egg-info/top_level.txt
+[10.194s] reading manifest file '../../build/drone_rtk/drone_rtk.egg-info/SOURCES.txt'
+[10.206s] writing manifest file '../../build/drone_rtk/drone_rtk.egg-info/SOURCES.txt'
+[10.207s] running build
+[10.207s] running build_py
+[10.208s] running install
+[10.209s] running install_lib
+[10.223s] running install_data
+[10.224s] running install_egg_info
+[10.232s] removing '/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk-0.1.0-py3.10.egg-info' (and everything under it)
+[10.243s] Copying ../../build/drone_rtk/drone_rtk.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages/drone_rtk-0.1.0-py3.10.egg-info
+[10.249s] running install_scripts
+[10.422s] Installing rtk_monitor script to /home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/drone_rtk
+[10.424s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_rtk/install.log'
+[10.724s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_rtk' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rtk/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rtk/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rtk build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rtk/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rtk/install.log --single-version-externally-managed install_data

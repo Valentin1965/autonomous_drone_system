@@ -1,0 +1,27 @@
+mission:
+  frame: "LOCAL_NED"
+  waypoints:
+    - type: "TAKEOFF"
+      x: 0.0
+      y: 0.0
+      z: -3.0
+
+    - type: "WAYPOINT"
+      x: 5.0
+      y: 0.0
+      z: -3.0
+
+    - type: "WAYPOINT"
+      x: 5.0
+      y: 5.0
+      z: -3.0
+
+    - type: "WAYPOINT"
+      x: 0.0
+      y: 5.0
+      z: -3.0
+
+    - type: "LAND"
+      x: 0.0
+      y: 0.0
+      z: 0.0

@@ -1,0 +1,37 @@
+[8.394s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_rviz': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rviz/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rviz build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rviz/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rviz/install.log --single-version-externally-managed install_data
+[10.085s] running egg_info
+[10.098s] creating ../../build/drone_rviz/drone_rviz.egg-info
+[10.100s] writing ../../build/drone_rviz/drone_rviz.egg-info/PKG-INFO
+[10.101s] writing dependency_links to ../../build/drone_rviz/drone_rviz.egg-info/dependency_links.txt
+[10.101s] writing entry points to ../../build/drone_rviz/drone_rviz.egg-info/entry_points.txt
+[10.102s] writing requirements to ../../build/drone_rviz/drone_rviz.egg-info/requires.txt
+[10.107s] writing top-level names to ../../build/drone_rviz/drone_rviz.egg-info/top_level.txt
+[10.112s] writing manifest file '../../build/drone_rviz/drone_rviz.egg-info/SOURCES.txt'
+[10.119s] reading manifest file '../../build/drone_rviz/drone_rviz.egg-info/SOURCES.txt'
+[10.132s] writing manifest file '../../build/drone_rviz/drone_rviz.egg-info/SOURCES.txt'
+[10.133s] running build
+[10.133s] running build_py
+[10.133s] creating /home/enovo_my/autonomous_drone_system/build/drone_rviz/build
+[10.138s] creating /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib
+[10.144s] creating /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib/drone_rviz
+[10.145s] copying drone_rviz/__init__.py -> /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib/drone_rviz
+[10.146s] running install
+[10.148s] running install_lib
+[10.151s] creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz
+[10.156s] copying /home/enovo_my/autonomous_drone_system/build/drone_rviz/build/lib/drone_rviz/__init__.py -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz
+[10.163s] byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz/__init__.py to __init__.cpython-310.pyc
+[10.166s] running install_data
+[10.166s] creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index
+[10.173s] creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index/resource_index
+[10.177s] creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index/resource_index/packages
+[10.180s] copying resource/drone_rviz -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/ament_index/resource_index/packages
+[10.180s] copying package.xml -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz
+[10.181s] creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/rviz
+[10.182s] copying rviz/mission_view.rviz -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/rviz
+[10.182s] creating /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/launch
+[10.184s] copying launch/rviz.launch.py -> /home/enovo_my/autonomous_drone_system/install/drone_rviz/share/drone_rviz/launch
+[10.184s] running install_egg_info
+[10.200s] Copying ../../build/drone_rviz/drone_rviz.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages/drone_rviz-0.1.0-py3.10.egg-info
+[10.216s] running install_scripts
+[10.413s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_rviz/install.log'
+[10.665s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_rviz' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_rviz/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_rviz/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_rviz build --build-base /home/enovo_my/autonomous_drone_system/build/drone_rviz/build install --record /home/enovo_my/autonomous_drone_system/build/drone_rviz/install.log --single-version-externally-managed install_data

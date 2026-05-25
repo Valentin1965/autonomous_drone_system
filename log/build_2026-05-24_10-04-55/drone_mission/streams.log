@@ -1,0 +1,21 @@
+[8.447s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_mission': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_mission/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_mission/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_mission build --build-base /home/enovo_my/autonomous_drone_system/build/drone_mission/build install --record /home/enovo_my/autonomous_drone_system/build/drone_mission/install.log --single-version-externally-managed install_data
+[10.636s] running egg_info
+[10.645s] writing ../../build/drone_mission/drone_mission.egg-info/PKG-INFO
+[10.646s] writing dependency_links to ../../build/drone_mission/drone_mission.egg-info/dependency_links.txt
+[10.647s] writing entry points to ../../build/drone_mission/drone_mission.egg-info/entry_points.txt
+[10.648s] writing requirements to ../../build/drone_mission/drone_mission.egg-info/requires.txt
+[10.649s] writing top-level names to ../../build/drone_mission/drone_mission.egg-info/top_level.txt
+[10.659s] reading manifest file '../../build/drone_mission/drone_mission.egg-info/SOURCES.txt'
+[10.666s] writing manifest file '../../build/drone_mission/drone_mission.egg-info/SOURCES.txt'
+[10.666s] running build
+[10.666s] running build_py
+[10.667s] running install
+[10.667s] running install_lib
+[10.677s] running install_data
+[10.678s] running install_egg_info
+[10.724s] removing '/home/enovo_my/autonomous_drone_system/install/drone_mission/lib/python3.10/site-packages/drone_mission-0.1.0-py3.10.egg-info' (and everything under it)
+[10.724s] Copying ../../build/drone_mission/drone_mission.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_mission/lib/python3.10/site-packages/drone_mission-0.1.0-py3.10.egg-info
+[10.725s] running install_scripts
+[10.914s] Installing mission_controller script to /home/enovo_my/autonomous_drone_system/install/drone_mission/lib/drone_mission
+[10.915s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_mission/install.log'
+[11.058s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_mission' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_mission/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_mission/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_mission build --build-base /home/enovo_my/autonomous_drone_system/build/drone_mission/build install --record /home/enovo_my/autonomous_drone_system/build/drone_mission/install.log --single-version-externally-managed install_data

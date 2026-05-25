@@ -1,0 +1,19 @@
+running egg_info
+writing ../../build/drone_diagnostics/drone_diagnostics.egg-info/PKG-INFO
+writing dependency_links to ../../build/drone_diagnostics/drone_diagnostics.egg-info/dependency_links.txt
+writing entry points to ../../build/drone_diagnostics/drone_diagnostics.egg-info/entry_points.txt
+writing requirements to ../../build/drone_diagnostics/drone_diagnostics.egg-info/requires.txt
+writing top-level names to ../../build/drone_diagnostics/drone_diagnostics.egg-info/top_level.txt
+reading manifest file '../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt'
+writing manifest file '../../build/drone_diagnostics/drone_diagnostics.egg-info/SOURCES.txt'
+running build
+running build_py
+running install
+running install_lib
+running install_data
+running install_egg_info
+removing '/home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics-0.1.0-py3.10.egg-info' (and everything under it)
+Copying ../../build/drone_diagnostics/drone_diagnostics.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/python3.10/site-packages/drone_diagnostics-0.1.0-py3.10.egg-info
+running install_scripts
+Installing drone_diagnostics script to /home/enovo_my/autonomous_drone_system/install/drone_diagnostics/lib/drone_diagnostics
+writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_diagnostics/install.log'

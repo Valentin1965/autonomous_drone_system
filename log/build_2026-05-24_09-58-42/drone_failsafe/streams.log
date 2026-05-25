@@ -1,0 +1,37 @@
+[6.059s] Invoking command in '/home/enovo_my/autonomous_drone_system/src/drone_failsafe': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_failsafe/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_failsafe build --build-base /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build install --record /home/enovo_my/autonomous_drone_system/build/drone_failsafe/install.log --single-version-externally-managed install_data
+[7.473s] running egg_info
+[7.487s] creating ../../build/drone_failsafe/drone_failsafe.egg-info
+[7.487s] writing ../../build/drone_failsafe/drone_failsafe.egg-info/PKG-INFO
+[7.488s] writing dependency_links to ../../build/drone_failsafe/drone_failsafe.egg-info/dependency_links.txt
+[7.489s] writing entry points to ../../build/drone_failsafe/drone_failsafe.egg-info/entry_points.txt
+[7.489s] writing requirements to ../../build/drone_failsafe/drone_failsafe.egg-info/requires.txt
+[7.489s] writing top-level names to ../../build/drone_failsafe/drone_failsafe.egg-info/top_level.txt
+[7.492s] writing manifest file '../../build/drone_failsafe/drone_failsafe.egg-info/SOURCES.txt'
+[7.495s] reading manifest file '../../build/drone_failsafe/drone_failsafe.egg-info/SOURCES.txt'
+[7.498s] writing manifest file '../../build/drone_failsafe/drone_failsafe.egg-info/SOURCES.txt'
+[7.504s] running build
+[7.507s] running build_py
+[7.507s] creating /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build
+[7.509s] creating /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build/lib
+[7.511s] creating /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build/lib/drone_failsafe
+[7.512s] copying drone_failsafe/__init__.py -> /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build/lib/drone_failsafe
+[7.513s] copying drone_failsafe/failsafe_node.py -> /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build/lib/drone_failsafe
+[7.513s] running install
+[7.514s] running install_lib
+[7.519s] creating /home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages/drone_failsafe
+[7.519s] copying /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build/lib/drone_failsafe/__init__.py -> /home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages/drone_failsafe
+[7.520s] copying /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build/lib/drone_failsafe/failsafe_node.py -> /home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages/drone_failsafe
+[7.521s] byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages/drone_failsafe/__init__.py to __init__.cpython-310.pyc
+[7.522s] byte-compiling /home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages/drone_failsafe/failsafe_node.py to failsafe_node.cpython-310.pyc
+[7.525s] running install_data
+[7.526s] creating /home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/ament_index
+[7.527s] creating /home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/ament_index/resource_index
+[7.528s] creating /home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/ament_index/resource_index/packages
+[7.529s] copying resource/drone_failsafe -> /home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/ament_index/resource_index/packages
+[7.529s] copying package.xml -> /home/enovo_my/autonomous_drone_system/install/drone_failsafe/share/drone_failsafe
+[7.530s] running install_egg_info
+[7.533s] Copying ../../build/drone_failsafe/drone_failsafe.egg-info to /home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages/drone_failsafe-0.1.0-py3.10.egg-info
+[7.538s] running install_scripts
+[7.609s] Installing drone_failsafe script to /home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/drone_failsafe
+[7.612s] writing list of installed files to '/home/enovo_my/autonomous_drone_system/build/drone_failsafe/install.log'
+[7.761s] Invoked command in '/home/enovo_my/autonomous_drone_system/src/drone_failsafe' returned '0': PYTHONPATH=/home/enovo_my/autonomous_drone_system/build/drone_failsafe/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enovo_my/autonomous_drone_system/install/drone_failsafe/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/drone_failsafe build --build-base /home/enovo_my/autonomous_drone_system/build/drone_failsafe/build install --record /home/enovo_my/autonomous_drone_system/build/drone_failsafe/install.log --single-version-externally-managed install_data
