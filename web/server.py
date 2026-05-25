@@ -30,24 +30,28 @@ from mavlink.offboard import OffboardController
 app = Flask(__name__)
 logger = setup_logger("drone_web_panel")
 
+# ====================== ГЛОБАЛЬНІ СТАНИ ======================
 SPRAYER_ACTIVE = False
 EMERGENCY_STOP = False
 
 # ====================== POINTCLOUD PUBLISHER ======================
 class PointCloudPublisher(Node):
     def __init__(self):
-        super().__init__('traversable_pc_pub')
+        super().__init__('traversable_pointcloud_publisher')
         self.pub = self.create_publisher(PointCloud2, '/traversable_pointcloud', 10)
+        logger.info("PointCloud2 Publisher запущено → /traversable_pointcloud")
 
-    def publish(self, points):
-        if not points: return
+    def publish(self, points, frame_id="oakd_rgb_optical_frame"):
+        if not points:
+            return
         header = Header()
         header.stamp = self.get_clock().now().to_msg()
-        header.frame_id = "oakd_rgb_optical_frame"
-        self.pub.publish(pc2.create_cloud_xyz32(header, points))
+        header.frame_id = frame_id
+        cloud_msg = pc2.create_cloud_xyz32(header, points)
+        self.pub.publish(cloud_msg)
 
 
-# ====================== YOLO SEGMENTATION TRACKER (з адаптацією PIC4SeR) ======================
+# ====================== YOLOv8 SEGMENTATION TRACKER ======================
 class YOLOSegmentationTracker:
     def __init__(self):
         self.running = False
@@ -58,8 +62,8 @@ class YOLOSegmentationTracker:
 
         self.forward_speed = 0.70
         self.lateral_gain = 0.95
-        self.center_tolerance = 0.08      # вужчий коридор — точніше центрування
-        self.obstacle_stop_threshold = 0.22
+        self.center_tolerance = 0.09      # точне центрування по ряду
+        self.obstacle_stop_threshold = 0.24
 
     def init_oakd(self):
         pipeline = dai.Pipeline()
@@ -90,15 +94,23 @@ class YOLOSegmentationTracker:
 
         self.pipeline = pipeline
         self.device = dai.Device(pipeline)
-        logger.info("Oak-D ініціалізовано (RGB + Depth)")
+        logger.info("Oak-D (RGB + Depth) ініціалізовано")
+
+    def get_best_model_path(self):
+        models_dir = "models"
+        if not os.path.exists(models_dir):
+            os.makedirs(models_dir)
+        pt_files = list(Path(models_dir).glob("*.pt"))
+        return str(max(pt_files, key=os.path.getmtime)) if pt_files else "yolov8s-seg.pt"
 
     def start(self):
-        if self.running: return {"status": "already_running"}
-        
+        if self.running:
+            return {"status": "already_running"}
+
         self.init_oakd()
         model_path = self.get_best_model_path()
         self.model = YOLO(model_path)
-        logger.info(f"YOLOv8-seg завантажено: {model_path}")
+        logger.info(f"YOLOv8-seg модель завантажена: {model_path}")
 
         if not rclpy.ok():
             rclpy.init()
@@ -109,18 +121,14 @@ class YOLOSegmentationTracker:
         self.thread.start()
         return {"status": "started"}
 
-    def get_best_model_path(self):
-        if not os.path.exists(MODELS_DIR):
-            os.makedirs(MODELS_DIR)
-        pt_files = list(Path(MODELS_DIR).glob("*.pt"))
-        return str(max(pt_files, key=os.path.getmtime)) if pt_files else "yolov8s-seg.pt"
-
     def stop(self):
         self.running = False
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=3)
-        if self.device: self.device.close()
-        if self.pc_node: self.pc_node.destroy_node()
+        if self.device:
+            self.device.close()
+        if self.pc_node:
+            self.pc_node.destroy_node()
         return {"status": "stopped"}
 
     def _tracking_loop(self):
@@ -133,111 +141,133 @@ class YOLOSegmentationTracker:
             depth_msg = depth_q.get()
 
             frame = rgb_msg.getCvFrame()
-            depth_frame = depth_msg.getFrame()   # в мм
+            depth_frame = depth_msg.getFrame()
 
             h, w = frame.shape[:2]
             results = self.model(frame, verbose=False, conf=0.45)
 
-            left_mask = None
-            right_mask = None
+            left_mask = right_mask = None
             obstacle_area = 0.0
 
             for r in results:
                 if not r.masks: continue
-                for i, mask_tensor in enumerate(r.masks.data):
+                for i, mask_t in enumerate(r.masks.data):
                     cls_name = self.model.names[int(r.boxes.cls[i])]
-                    mask = (mask_tensor.cpu().numpy() * 255).astype(np.uint8)
+                    mask = (mask_t.cpu().numpy() * 255).astype(np.uint8)
                     area = np.sum(mask > 0) / (h * w)
 
                     if cls_name == "traversable":
-                        # Розділяємо на ліву та праву частину
-                        mid_x = w // 2
-                        left_part = mask[:, :mid_x]
-                        right_part = mask[:, mid_x:]
-
-                        if np.sum(left_part) > np.sum(right_part):
+                        mid = w // 2
+                        if np.sum(mask[:, :mid]) > np.sum(mask[:, mid:]):
                             left_mask = mask
                         else:
                             right_mask = mask
                     elif cls_name == "obstacle":
                         obstacle_area += area
 
-            # Автозупинка
             if obstacle_area > self.obstacle_stop_threshold:
                 self._send_stop()
-                cv2.putText(frame, "STOP - OBSTACLE!", (50, 70), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0,0,255), 4)
+                cv2.putText(frame, "STOP - OBSTACLE!", (50, 70),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.4, (0,0,255), 4)
                 continue
 
-            # === АДАПТАЦІЯ PIC4SeR: ЦЕНТРУВАННЯ ПО РЯДУ ===
-            if left_mask is not None or right_mask is not None:
-                center_offset = self.calculate_row_center(left_mask, right_mask, w)
-                
-                forward = self.forward_speed
-                lateral = center_offset * self.lateral_gain
+            # Центрування по ряду (адаптація PIC4SeR)
+            offset = self.calculate_center_offset(left_mask, right_mask, w)
 
-                # Автоматичне вмикання оприскувача
-                if abs(center_offset) < 0.15:   # добре вирівняний по ряду
-                    if not SPRAYER_ACTIVE:
-                        SPRAYER_ACTIVE = True
-                        logger.info("Авто-вмикання оприскувача — стабільний рух по ряду")
-                else:
-                    if SPRAYER_ACTIVE:
-                        SPRAYER_ACTIVE = False
-                        logger.info("Оприскувач вимкнено — корекція курсу")
+            forward = self.forward_speed
+            lateral = offset * self.lateral_gain
 
-                self._send_move(forward, lateral)
+            # Автоматичне вмикання оприскувача при стабільному русі по ряду
+            if abs(offset) < 0.12:
+                if not SPRAYER_ACTIVE:
+                    SPRAYER_ACTIVE = True
+                    self._set_sprayer(True)
+            else:
+                if SPRAYER_ACTIVE:
+                    SPRAYER_ACTIVE = False
+                    self._set_sprayer(False)
 
-                # Візуалізація
-                overlay = frame.copy()
-                if left_mask is not None:
-                    overlay = cv2.addWeighted(overlay, 0.7, cv2.cvtColor(left_mask, cv2.COLOR_GRAY2BGR), 0.3, 0)
-                if right_mask is not None:
-                    overlay = cv2.addWeighted(overlay, 0.7, cv2.cvtColor(right_mask, cv2.COLOR_GRAY2BGR), 0.3, 0)
-                
-                cv2.line(overlay, (w//2, 0), (w//2, h), (255, 255, 0), 2)
-                cv2.imshow("Vineyard Row Navigation", overlay)
+            self._send_move(forward, lateral)
+
+            # Візуалізація
+            overlay = frame.copy()
+            if left_mask is not None:
+                overlay = cv2.addWeighted(overlay, 0.7, cv2.cvtColor(left_mask, cv2.COLOR_GRAY2BGR), 0.3, 0)
+            if right_mask is not None:
+                overlay = cv2.addWeighted(overlay, 0.7, cv2.cvtColor(right_mask, cv2.COLOR_GRAY2BGR), 0.3, 0)
+
+            cv2.line(overlay, (w//2, 0), (w//2, h), (0, 255, 255), 2)
+            cv2.imshow("Vineyard Navigation", overlay)
 
             if cv2.waitKey(1) & 0xFF == 27:
                 break
 
-    def calculate_row_center(self, left_mask, right_mask, width):
-        """Обчислює зміщення від центру ряду (адаптація PIC4SeR)"""
-        left_center = right_center = width / 2
-
+    def calculate_center_offset(self, left_mask, right_mask, width):
+        left_c = right_c = width / 2.0
         if left_mask is not None:
-            moments = cv2.moments(left_mask)
-            if moments["m00"] > 5000:
-                left_center = moments["m10"] / moments["m00"]
-
+            m = cv2.moments(left_mask)
+            if m["m00"] > 5000:
+                left_c = m["m10"] / m["m00"]
         if right_mask is not None:
-            moments = cv2.moments(right_mask)
-            if moments["m00"] > 5000:
-                right_center = moments["m10"] / moments["m00"]
-
-        row_center = (left_center + right_center) / 2
-        offset = (row_center - width / 2) / (width / 2)   # нормалізовано -1..1
-        return offset
+            m = cv2.moments(right_mask)
+            if m["m00"] > 5000:
+                right_c = m["m10"] / m["m00"]
+        center = (left_c + right_c) / 2
+        return (center - width / 2) / (width / 2)
 
     def _send_move(self, forward, lateral):
         try:
             requests.post("http://127.0.0.1:8080/api/move",
-                          json={"forward": forward, "lateral": lateral, "yaw": 0}, timeout=0.1)
-        except: pass
+                          json={"forward": forward, "lateral": lateral, "yaw": 0}, timeout=0.12)
+        except:
+            pass
 
     def _send_stop(self):
         try:
-            requests.post("http://127.0.0.1:8080/api/stop", timeout=0.1)
-        except: pass
+            requests.post("http://127.0.0.1:8080/api/stop", timeout=0.12)
+        except:
+            pass
 
-    def generate_pointcloud(self, depth_frame, mask):
-        # (залишаємо як раніше — реальна глибина)
-        pass
+    def _set_sprayer(self, state: bool):
+        endpoint = "/api/sprayer/on" if state else "/api/sprayer/off"
+        try:
+            requests.post(f"http://127.0.0.1:8080{endpoint}", timeout=0.1)
+        except:
+            pass
 
 
 tracker = YOLOSegmentationTracker()
 
-# ====================== FLASK API ======================
-# (API для оприскувача, аварійної зупинки — залишаються як раніше)
+# ====================== FLASK ROUTES ======================
+@app.route("/api/start_tracking", methods=["POST"])
+def api_start_tracking():
+    return jsonify(tracker.start())
+
+@app.route("/api/stop_tracking", methods=["POST"])
+def api_stop_tracking():
+    return jsonify(tracker.stop())
+
+@app.route("/api/sprayer/on", methods=["POST"])
+def api_sprayer_on():
+    global SPRAYER_ACTIVE
+    SPRAYER_ACTIVE = True
+    logger.info("Оприскувач УВІМКНЕНО")
+    return jsonify({"sprayer": "on"})
+
+@app.route("/api/sprayer/off", methods=["POST"])
+def api_sprayer_off():
+    global SPRAYER_ACTIVE
+    SPRAYER_ACTIVE = False
+    logger.info("Оприскувач ВИМКНЕНО")
+    return jsonify({"sprayer": "off"})
+
+@app.route("/api/emergency/stop", methods=["POST"])
+def api_emergency_stop():
+    global EMERGENCY_STOP
+    EMERGENCY_STOP = True
+    tracker._send_stop()
+    logger.critical("АВАРІЙНА ЗУПИНКА АКТИВОВАНА!")
+    return jsonify({"status": "emergency_stop"})
 
 @app.route("/")
 def index():
@@ -247,28 +277,51 @@ def index():
 <head>
   <meta charset="utf-8">
   <title>Дрон — Навігація по Рядах</title>
-  <style>body{font-family:Arial;margin:20px;background:#111;color:#eee;}</style>
+  <style>
+    body {font-family:Arial, sans-serif; margin:20px; background:#111; color:#eee;}
+    button {padding:14px; margin:8px 0; width:100%; font-size:17px; border-radius:8px;}
+    .sprayer-on {background:#0a0; color:white;}
+    .sprayer-off {background:#a00; color:white;}
+    .emergency {background:#c22; color:white; font-weight:bold;}
+  </style>
 </head>
 <body>
-  <h2>Автономна Навігація по Рядах + Оприскувач</h2>
-  <button onclick="post('/api/start_tracking')">Запустити Трекер</button>
-  <button onclick="post('/api/stop_tracking')">Зупинити Трекер</button>
-  <button onclick="toggleSprayer()" id="sprayerBtn">Оприскувач ВИМКНЕНО</button>
-  <button onclick="emergencyStop()" style="background:#c22;color:white;">⚠ АВАРІЙНА ЗУПИНКА</button>
+  <h2>Автономна Навігація по Винограднику</h2>
+  
+  <button onclick="post('/api/start_tracking')">▶ Запустити YOLO Трекер</button>
+  <button onclick="post('/api/stop_tracking')">■ Зупинити Трекер</button>
+  
+  <hr>
+  <h3>Оприскувач</h3>
+  <button id="sprayerBtn" onclick="toggleSprayer()" class="sprayer-off">Оприскувач ВИМКНЕНО</button>
+
+  <h3>Аварійне керування</h3>
+  <button onclick="emergencyStop()" class="emergency">⚠ АВАРІЙНА ЗУПИНКА ДВИГУНІВ</button>
 
   <script>
     let sprayer = false;
-    function post(url){ fetch(url,{method:'POST'}).then(r=>r.json()).then(console.log); }
-    function toggleSprayer(){
+    function post(url) {
+      fetch(url, {method:'POST'}).then(r=>r.json()).then(console.log);
+    }
+    function toggleSprayer() {
       sprayer = !sprayer;
-      document.getElementById('sprayerBtn').textContent = sprayer ? "Оприскувач УВІМКНЕНО" : "Оприскувач ВИМКНЕНО";
+      const btn = document.getElementById('sprayerBtn');
+      btn.textContent = sprayer ? "Оприскувач УВІМКНЕНО" : "Оприскувач ВИМКНЕНО";
+      btn.classList.toggle('sprayer-on', sprayer);
+      btn.classList.toggle('sprayer-off', !sprayer);
       post(sprayer ? '/api/sprayer/on' : '/api/sprayer/off');
     }
-    function emergencyStop(){ if(confirm('Аварійна зупинка?')) post('/api/emergency/stop'); }
+    function emergencyStop() {
+      if(confirm("УВАГА! Аварійна зупинка двигунів?")) {
+        post('/api/emergency/stop');
+      }
+    }
   </script>
 </body>
 </html>
     """
 
 if __name__ == "__main__":
+    print("=== Автономна система дрона запущена ===")
+    print("YOLOv8 Segmentation + PointCloud2 + Авто-оприскувач")
     app.run(host="0.0.0.0", port=8080, debug=False)

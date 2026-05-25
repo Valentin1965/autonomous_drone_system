@@ -1,5 +1,91 @@
 # Algorithm of actions: ARM, takeoff, missions, offboard, computer vision
 
+┌──────────────────────────────────────────────────────────────────────┐
+│                        AUTONOMOUS DRONE SYSTEM                        │
+└──────────────────────────────────────────────────────────────────────┘
+
+                         (1) PX4 SITL / Pixhawk
+                         ───────────────────────
+┌──────────────────────────────────────────────────────────────────────┐
+│  PX4 Autopilot (SITL / Hardware)                                     │
+│                                                                      │
+│  • EKF2 (позиція, орієнтація)                                        │
+│  • MPC (контролер швидкості)                                         │
+│  • Mission mode / Offboard mode                                      │
+│  • MAVLink router (UDP 14550)                                        │
+│                                                                      │
+│  Вихід: MAVLink HEARTBEAT, GPS, ATTITUDE, LOCAL_NED, SYS_STATUS      │
+│  Вхід: SET_POSITION_TARGET_LOCAL_NED / GLOBAL_INT                    │
+└──────────────────────────────────────────────────────────────────────┘
+                         │
+                         │ UDP 14550 (MAVLink)
+                         ▼
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                         (2) Python Backend                           │
+│                         web.server (Flask)                           │
+│                                                                      │
+│  Модулі:                                                             │
+│   • mavlink/connection.py — підключення до PX4                       │
+│   • mavlink/commander.py — arm, disarm, takeoff, land                │
+│   • mavlink/offboard.py — offboard‑маневри                          │
+│   • missions/ — завантаження та виконання місій                      │
+│                                                                      │
+│  API:                                                                │
+│   • /api/arm, /api/disarm                                            │
+│   • /api/takeoff, /api/land                                          │
+│   • /api/move (velocity control)                                     │
+│   • /api/stop                                                        │
+│   • /api/status                                                      │
+│   • /api/set_mode (earth/body)                                       │
+│                                                                      │
+│  CV‑модуль (YOLOv8):                                                 │
+│   • /api/cv/start, /api/cv/stop                                      │
+│   • /api/cv/target (вибір класу)                                     │
+│                                                                      │
+│  Потоки:                                                             │
+│   • Main Flask thread                                                │
+│   • CV thread (YOLOv8)                                               │
+│                                                                      │
+│  Логіка CV:                                                          │
+│   • Follow Object                                                    │
+│   • Auto‑stop (за площею боксу)                                      │
+│   • Obstacle Avoidance (клас “car”)                                  │
+└──────────────────────────────────────────────────────────────────────┘
+                         │
+                         │ HTTP (localhost:8080)
+                         ▼
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                         (3) Web UI (Frontend)                        │
+│                                                                      │
+│  Компоненти:                                                         │
+│   • HUD (телеметрія)                                                 │
+│   • Карта (Leaflet + OSM)                                            │
+│   • Джойстик (pointer events)                                        │
+│   • Кнопки руху                                                      │
+│   • Перемикач Earth/Body                                             │
+│   • CV MODE ON/OFF                                                   │
+│   • Вибір класу YOLO (person/car/dog/banana)                         │
+│                                                                      │
+│  JS‑логіка:                                                          │
+│   • pollTelemetry() — 2 Гц                                           │
+│   • startMove() / stopMove()                                         │
+│   • toggleCV()                                                       │
+│   • setCVTarget()                                                    │
+└──────────────────────────────────────────────────────────────────────┘
+                         │
+                         │ User Interaction
+                         ▼
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                         (4) Operator / User                          │
+│                                                                      │
+│  • Керує дроном через UI                                             │
+│  • Вмикає CV‑режим                                                   │
+│  • Обирає ціль YOLO                                                  │
+│  • Спостерігає за картою та HUD                                      │
+└──────────────────────────────────────────────────────────────────────┘
 ---
 
 ## 0. Initial conditions (every session)
@@ -260,4 +346,5 @@ curl -X POST http://127.0.0.1:8080/api/set_mode \
 або
 
 -d '{"mode":"body"}'
+
 
