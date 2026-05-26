@@ -8,7 +8,16 @@ class MavlinkConnection:
         self.master = None
         self.logger = logger
 
+    def close(self) -> None:
+        if self.master is not None:
+            try:
+                self.master.close()
+            except Exception:
+                pass
+            self.master = None
+
     def connect(self):
+        self.close()
         if self.logger:
             self.logger.info(f"Connecting to MAVLink on {self.connection_string}...")
         self.master = mavutil.mavlink_connection(

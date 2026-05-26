@@ -1,0 +1,42 @@
+# Варіант 2 — станція керування (GCS) → Pixhawk по телеметрії
+# Запуск: scripts/run_variant2_gcs.sh  або
+#   export SYSTEM_CONFIG=config/system_gcs.yaml MAVLINK_PROFILE=px4
+#   python main.py --web
+
+deployment: variant_2
+role: ground_station
+
+vehicle:
+  type: ground_rover
+  default_frame: body
+
+mavlink:
+  active: px4
+  # Замініть IP на телеметрію / Wi‑Fi робота (QGC має бачити той самий порт)
+  connection_px4: "udp:192.168.1.10:14550"
+  connection_sim: "udp:127.0.0.1:14550"
+  heartbeat_timeout: 5
+
+simulator:
+  connection_string: "udpin:0.0.0.0:14550"
+
+offboard:
+  rate_hz: 20
+
+mission:
+  file: "config/mission.yaml"
+  arrival_radius_m: 2.5
+  poll_interval_s: 0.2
+  goto_retry_s: 1.5
+  default_speed_m_s: 1.0
+  min_speed_m_s: 0.3
+  max_speed_m_s: 3.0
+
+web:
+  host: "0.0.0.0"
+  port: 8080
+  telemetry_hz: 2
+
+logging:
+  level: INFO
+  log_dir: logs

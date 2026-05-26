@@ -23,6 +23,138 @@ body {
 .badge.ok { background: #1b5e20; color: #c8e6c9; }
 .badge.off { background: #5c1a1a; color: #ffcdd2; }
 .badge.warn { background: #5d4037; color: #ffe0b2; }
+.badge.profile { background: #263238; color: #b0bec5; font-size: 0.78rem; }
+.top-bar-status { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.config-warning {
+  padding: 8px 16px;
+  background: #5d4037;
+  color: #ffe0b2;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #8d6e63;
+}
+.config-warning.hidden { display: none; }
+
+.sim-banner {
+  padding: 6px 16px;
+  background: #1a3a5c;
+  color: #90caf9;
+  font-size: 0.85rem;
+  text-align: center;
+  border-bottom: 1px solid #2a5080;
+}
+.sim-banner.hidden { display: none; }
+
+.speed-presets { flex-wrap: wrap; gap: 6px; }
+.speed-presets .btn { flex: 1; min-width: 90px; font-size: 0.78rem; }
+
+/* Допоміжні кнопки (пресети швидкості, флот, список точок) */
+.btn.wp-btn,
+#btnFleetApply {
+  flex: 0 1 auto;
+  background: #37474f;
+  color: #e8eef4;
+  border: 1px solid #4a6078;
+}
+.btn.wp-btn:hover,
+#btnFleetApply:hover {
+  background: #455a64;
+  color: #fff;
+}
+.btn.wp-btn:active,
+#btnFleetApply:active {
+  background: #2c3944;
+}
+
+.fleet-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.fleet-selector .fleet-btn {
+  flex: 1;
+  min-width: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  border-radius: 8px;
+  border: 2px solid #3a5070;
+  background: #1e2a38;
+  overflow: hidden;
+}
+.fleet-selector .fleet-btn.active {
+  border-color: #90caf9;
+  background: #1a3a5c;
+}
+.fleet-selector .fleet-select {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: #e8eef4;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: left;
+}
+.fleet-selector .fleet-run {
+  width: 36px;
+  border: none;
+  border-left: 1px solid #3a5070;
+  background: #263238;
+  color: #a5d6a7;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.fleet-selector .fleet-run:hover {
+  background: #2e7d32;
+}
+.fleet-selector .fleet-link {
+  margin-right: 4px;
+  font-size: 0.7rem;
+}
+.fleet-selector .fleet-link.on {
+  color: #69f0ae;
+}
+.fleet-selector .fleet-link.off {
+  color: #ef5350;
+}
+.fleet-selector .fleet-phase {
+  display: block;
+  font-size: 0.72rem;
+  color: #90a4ae;
+  margin-top: 2px;
+}
+.fleet-marker {
+  opacity: 0.85;
+}
+.fleet-marker.selected {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px #fff);
+}
+.fleet-panel.hidden { display: none; }
+
+.preflight-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 0.88rem;
+}
+.preflight-list li {
+  padding: 4px 8px 4px 24px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  background: #1e2a38;
+  position: relative;
+}
+.preflight-list li::before {
+  content: "○";
+  position: absolute;
+  left: 8px;
+  color: #78909c;
+}
+.preflight-list li.ok::before { content: "✓"; color: #81c784; }
+.preflight-list li.ok { background: #1b3324; }
 
 .layout {
   display: grid;
@@ -67,6 +199,8 @@ body {
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
   overflow: hidden;
+  min-width: 240px;
+  min-height: 120px;
 }
 .cv-overlay.hidden { display: none; }
 .cv-overlay.minimized #cvVideo,
@@ -93,13 +227,34 @@ body {
   border-radius: 4px;
   cursor: pointer;
 }
+.cv-video-wrap {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  min-height: 120px;
+  background: #000;
+}
 #cvVideo {
   display: block;
   width: 100%;
-  height: 240px;
+  height: 100%;
   object-fit: contain;
   background: #000;
 }
+.cv-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  z-index: 10;
+  background: linear-gradient(135deg, transparent 50%, #5a8ab0 50%);
+  border-bottom-right-radius: 8px;
+  touch-action: none;
+}
+.cv-overlay.minimized .cv-video-wrap,
+.cv-overlay.minimized .cv-resize-handle { display: none; }
 .cv-overlay-hint {
   margin: 0;
   padding: 6px 10px;
@@ -121,6 +276,12 @@ body {
   color: #7eb8ff;
 }
 .side-panel section { margin-bottom: 16px; }
+
+.hud-fleet-routes strong {
+  font-size: 0.72rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
 
 .hud-grid {
   display: grid;
@@ -148,40 +309,222 @@ body {
 }
 .btn.arm { background: #2e7d32; }
 .btn.disarm { background: #546e7a; }
-.btn.move { background: #37474f; min-width: 48px; }
+.btn.move { background: #37474f; min-width: 48px; touch-action: none; user-select: none; }
+.dpad { touch-action: none; }
 .btn.stop { background: #c62828; font-weight: bold; }
 .btn.cv { background: #4527a0; width: 100%; margin-bottom: 6px; }
 .btn.mission { background: #1565c0; }
 .btn.mission.active { background: #2e7d32; box-shadow: 0 0 0 2px #81c784; }
+.btn.mission.return-btn { background: #6a1b9a; flex: 1.2; }
+.btn.mission.return-btn:not(:disabled) { box-shadow: 0 0 0 2px #ce93d8; }
+.btn.mission:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .btn.sprayer-on { background: #2e7d32; width: 100%; margin-bottom: 6px; }
 .btn.sprayer-off { background: #6d4c41; width: 100%; margin-bottom: 6px; }
 .btn.emergency { background: #b71c1c; width: 100%; font-weight: bold; }
+
+.mode-panel { border-bottom: 1px solid #2a3a50; padding-bottom: 12px; }
+.mode-switch .btn.mode {
+  flex: 1;
+  background: #37474f;
+}
+.mode-switch .btn.mode.active {
+  background: #1565c0;
+  box-shadow: 0 0 0 2px #64b5f6;
+}
+.mode-switch .btn.mode.active#btnModeManual {
+  background: #e65100;
+  box-shadow: 0 0 0 2px #ffb74d;
+}
+.controls.panel-disabled {
+  opacity: 0.45;
+  filter: grayscale(0.35);
+}
+.controls.panel-disabled h2::after {
+  content: " (вимкнено)";
+  font-size: 0.65rem;
+  color: #888;
+  font-weight: normal;
+  text-transform: none;
+}
+#manualPanel.panel-disabled .btn,
+#manualPanel.panel-disabled input,
+#manualPanel.panel-disabled label.speed-control {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+#manualPanel.panel-disabled .btn.stop {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  opacity: 1;
+}
+#autonomousPanel.panel-disabled .btn,
+#autonomousPanel.panel-disabled input,
+#autonomousPanel.panel-disabled label.speed-control {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+#manualPanel:not(.panel-disabled) .dpad {
+  touch-action: none;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#manualPanel:not(.panel-disabled) .dpad .btn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: none !important;
+}
+#manualPanel:not(.panel-disabled) input[type="range"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+.manual-hint { margin-top: 0; margin-bottom: 8px; }
 
 .dpad {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   margin: 8px 0;
+  padding: 10px;
+  background: rgba(30, 40, 54, 0.85);
+  border-radius: 12px;
+  border: 1px solid #3a5070;
 }
-.dpad-mid { display: flex; gap: 4px; align-items: center; }
+.dpad-mid { display: flex; gap: 6px; align-items: center; }
+#manualPanel:not(.panel-disabled) .btn.move {
+  min-width: 52px;
+  min-height: 48px;
+  font-size: 1.1rem;
+  flex: 0 0 auto;
+}
+#manualPanel:not(.panel-disabled) .btn.move:active,
+#manualPanel:not(.panel-disabled) .btn.move.dpad-active {
+  background: #546e7a;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+#manualPanel:not(.panel-disabled) .btn.stop {
+  min-width: 52px;
+  min-height: 48px;
+  flex: 0 0 auto;
+}
 .hint { font-size: 0.75rem; color: #778; margin: 4px 0 0; }
 
+.speed-control {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: #aab;
+}
+.speed-control > span:first-child {
+  display: block;
+  margin-bottom: 6px;
+  color: #9cf;
+  font-weight: 600;
+}
+.speed-control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.speed-control-row input[type="range"] {
+  flex: 1;
+  accent-color: #42a5f5;
+}
+.speed-control-row strong {
+  min-width: 2.5rem;
+  text-align: right;
+  color: #e8eef4;
+}
+.speed-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #667;
+}
+
+.wp-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #8ab;
+}
+.wp-list-header .wp-btn {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  min-height: auto;
+  background: #455a64;
+  color: #e8eef4;
+  border: 1px solid #4a6078;
+}
 .wp-list {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
-  max-height: 100px;
+  max-height: 140px;
   overflow-y: auto;
   font-size: 0.75rem;
 }
-.wp-list li {
+.wp-list li.wp-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 6px;
   border-bottom: 1px solid #2a3545;
-  cursor: pointer;
   color: #aac;
 }
-.wp-list li:hover { background: #1e2836; }
+.wp-list li.wp-item:hover { background: #1e2836; }
+.wp-list .wp-num {
+  flex: 0 0 1.4rem;
+  font-weight: bold;
+  color: #ff9800;
+}
+.wp-list .wp-coords {
+  flex: 1;
+  cursor: pointer;
+  font-family: ui-monospace, monospace;
+  font-size: 0.68rem;
+}
+.wp-list .wp-actions {
+  display: flex;
+  gap: 4px;
+}
+.wp-list .wp-actions button {
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  background: #2a3545;
+  color: #cde;
+}
+.wp-list .wp-actions button:hover { background: #3a4a5f; }
+.wp-list .wp-actions .wp-del { color: #f88; }
+.wp-list li.wp-empty {
+  padding: 8px;
+  color: #667;
+  font-style: italic;
+}
+#editRouteHint.route-locked { color: #c96; }
+
+.leaflet-popup-content .wp-popup-del {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #c62828;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+.leaflet-popup-content .wp-popup-del:hover {
+  background: #e53935;
+}
 
 .wp-marker span {
   display: flex;
@@ -196,6 +539,11 @@ body {
   font-size: 12px;
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.wp-marker-active span {
+  background: #76ff03;
+  box-shadow: 0 0 12px rgba(118, 255, 3, 0.8);
+  transform: scale(1.15);
 }
 
 .log pre {
@@ -215,4 +563,161 @@ body {
   background: rgba(20, 28, 38, 0.92) !important;
   color: #eee !important;
   border: 1px solid #3a5070 !important;
+}
+
+/* Рухомий маркер rover (поверх waypoints) */
+.leaflet-div-icon.rover-arrow {
+  background: transparent !important;
+  border: none !important;
+}
+.rover-arrow-inner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 22px;
+  color: #4fc3f7;
+  text-shadow: 0 0 6px #000, 0 0 2px #fff;
+  pointer-events: none;
+}
+
+/* Маркер дрона у флоті — номер + стрілка */
+.leaflet-div-icon.fleet-rover-marker {
+  background: transparent !important;
+  border: none !important;
+}
+.fleet-rover-badge {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fleet-rover-arrow {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--rover-color, #4caf50);
+  text-shadow: 0 0 4px #000, 0 1px 2px #fff;
+  pointer-events: none;
+}
+.fleet-rover-num {
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  border: 2px solid var(--rover-color, #4caf50);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.fleet-rover-selected .fleet-rover-arrow {
+  color: #ffeb3b;
+  font-size: 26px;
+  filter: drop-shadow(0 0 6px rgba(255, 235, 59, 0.9));
+}
+.fleet-rover-selected .fleet-rover-num {
+  background: #ffeb3b;
+  color: #111;
+  border-color: #fff;
+}
+
+.wp-marker-fleet .wp-fleet-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 2px 4px;
+  border-radius: 50%;
+  color: #111;
+  font-weight: bold;
+  font-size: 11px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  line-height: 1.1;
+}
+.wp-marker-fleet .wp-fleet-dot small {
+  font-size: 8px;
+  opacity: 0.85;
+}
+.wp-marker-fleet.wp-marker-active .wp-fleet-dot {
+  box-shadow: 0 0 10px rgba(118, 255, 3, 0.85);
+  transform: scale(1.12);
+}
+
+.leaflet-overlay-pane {
+  z-index: 400 !important;
+}
+.leaflet-marker-pane {
+  z-index: 650 !important;
+}
+
+.fleet-size-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.fleet-size-label { font-size: 0.85rem; color: #b0bec5; }
+#fleetCountInput {
+  width: 4rem;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #3a5070;
+  background: #0d1117;
+  color: #e8eef4;
+}
+.mission-meta {
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #141c28;
+  border: 1px solid #2a3a50;
+}
+.mission-meta h3 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #90caf9;
+}
+.mission-meta .meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: #b0bec5;
+}
+.mission-meta .meta-field input,
+.mission-meta .meta-field textarea {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #3a5070;
+  background: #0d1117;
+  color: #e8eef4;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.mission-meta .meta-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.mission-meta #btnSaveMissionRecord {
+  width: 100%;
+  margin-top: 4px;
 }

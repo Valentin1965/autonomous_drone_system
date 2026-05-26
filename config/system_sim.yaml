@@ -1,0 +1,4 @@
+# Застаріло: використовуйте config/system.yaml + python main.py --full
+# Цей файл лишено лише як приклад override (SYSTEM_CONFIG=config/system_sim.yaml).
+
+# Див. fleet / mission presets у system.yaml

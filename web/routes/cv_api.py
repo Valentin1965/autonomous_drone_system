@@ -2,39 +2,40 @@ import time
 
 from flask import Blueprint, Response, jsonify
 
+from web.session_log import record
 from web.state import drone_state
-from web.tracker_service import get_jpeg_frame, get_tracker, is_running
+from web.tracker_service import get_cv_status, get_jpeg_frame, get_tracker, is_running
 
 cv_bp = Blueprint("cv", __name__)
 
-_PLACEHOLDER_JPEG = None
-
-
 def _placeholder_jpeg() -> bytes:
-    global _PLACEHOLDER_JPEG
-    if _PLACEHOLDER_JPEG is not None:
-        return _PLACEHOLDER_JPEG
     import cv2
     import numpy as np
 
     img = np.zeros((240, 420, 3), dtype=np.uint8)
     img[:] = (30, 40, 50)
+    label = "CV ON — кадр…" if is_running() else "CV OFF — натисніть CV ряд"
     cv2.putText(
-        img, "CV OFF - Start YOLO", (30, 120),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (180, 200, 220), 2,
+        img, label, (16, 120),
+        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (180, 200, 220), 2,
     )
     ok, buf = cv2.imencode(".jpg", img)
-    _PLACEHOLDER_JPEG = buf.tobytes() if ok else b""
-    return _PLACEHOLDER_JPEG
+    return buf.tobytes() if ok else b""
 
 
 @cv_bp.route("/api/start_tracking", methods=["POST"])
 @cv_bp.route("/api/cv/start", methods=["POST"])
 def api_start_tracking():
-    result = get_tracker().start()
+    try:
+        result = get_tracker().start()
+    except Exception as e:
+        record("cv_start_failed", str(e), level="error")
+        return jsonify({"status": "error", "message": str(e)}), 503
     if isinstance(result, dict):
         if result.get("status") == "error":
+            record("cv_start_failed", result.get("message", ""), level="error")
             return jsonify(result), 503
+        record("cv_start", result.get("planner", ""))
         return jsonify(result)
     return jsonify({"status": "started" if result else "already_running"})
 
@@ -43,6 +44,7 @@ def api_start_tracking():
 @cv_bp.route("/api/cv/stop", methods=["POST"])
 def api_stop_tracking():
     result = get_tracker().stop()
+    record("cv_stop")
     if isinstance(result, dict):
         return jsonify(result)
     return jsonify({"status": "stopped"})
@@ -95,12 +97,7 @@ def api_cv_stream():
 
 @cv_bp.route("/api/cv/status", methods=["GET"])
 def api_cv_status():
-    from web import tracker_service
-
-    t = tracker_service._tracker
-    return jsonify({
-        "running": t.running if t else False,
-        "source": t.source if t else None,
-        "motion": "in_process" if t and t.motion else None,
-        "emergency_stop": drone_state.emergency_stop,
-    })
+    st = get_cv_status()
+    st["motion"] = "in_process" if st.get("running") else None
+    st["emergency_stop"] = drone_state.emergency_stop
+    return jsonify(st)

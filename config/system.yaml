@@ -1,3 +1,6 @@
+# Dev (ПК): python main.py --full
+# Поле варіант 2: config/system_rpi.yaml + config/system_gcs.yaml — docs/VARIANT_2_SETUP.md
+
 vehicle:
   type: ground_rover
   default_frame: body   # body | earth — /api/set_mode
@@ -12,6 +15,27 @@ mavlink:
 
 simulator:
   connection_string: "udpin:0.0.0.0:14550"
+  demo_mission: "config/demo_mission.json"   # опційно: кнопка «Приклад маршруту» у GCS
+
+# Кілька rover (симуляція: 2 UDP-порти; у полі — свій mavlink_connection на дрон)
+fleet:
+  enabled: true
+  default_vehicle: rover_1
+  vehicles:
+    - id: rover_1
+      name: "Rover 1"
+      color: "#ff9800"
+      mavlink_connection: "udp:127.0.0.1:14550"
+      sim_bind: "udpin:0.0.0.0:14550"
+      start_lat: 50.45010
+      start_lon: 30.52340
+    - id: rover_2
+      name: "Rover 2"
+      color: "#4caf50"
+      mavlink_connection: "udp:127.0.0.1:14551"
+      sim_bind: "udpin:0.0.0.0:14551"
+      start_lat: 50.45080
+      start_lon: 30.52420
 
 offboard:
   rate_hz: 20
@@ -19,8 +43,22 @@ offboard:
 
 mission:
   file: "config/mission.yaml"
+  arrival_radius_m: 2.5
+  poll_interval_s: 0.15
+  goto_retry_s: 1.0
+  default_speed_m_s: 1.0
+  min_speed_m_s: 0.3
+  max_speed_m_s: 3.0
+  presets:
+    spray_m_s: 0.8
+    row_m_s: 1.0
+    transfer_m_s: 1.5
 
 web:
   host: "0.0.0.0"
   port: 8080
   telemetry_hz: 2
+
+logging:
+  level: INFO
+  log_dir: logs

@@ -28,6 +28,9 @@ Thumbs.db
 logs/
 *.log
 
+# Local notes (may contain credentials)
+git_arhiv.txt
+
 # ML weights (keep locally; see models/)
 *.pt
 models/*
@@ -42,3 +45,4 @@ assets/videos/*
 .pytest_cache/
 .coverage
 htmlcov/
+git_arhiv.txt

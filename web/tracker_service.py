@@ -41,3 +41,9 @@ def get_jpeg_frame():
     if _tracker is None:
         return None
     return _tracker.get_jpeg_frame()
+
+
+def get_cv_status() -> dict:
+    if _tracker is None:
+        return {"running": False, "planner": None, "nav_source": None}
+    return _tracker.get_public_status()

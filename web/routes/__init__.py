@@ -6,12 +6,20 @@ from web.routes.cv_api import cv_bp
 from web.routes.sprayer import sprayer_bp
 from web.routes.pages import pages_bp
 from web.routes.mission_api import mission_bp
+from web.routes.control_mode import control_bp
+from web.routes.diagnostics import diagnostics_bp
+from web.routes.sim_api import sim_bp
+from web.routes.fleet_api import fleet_bp
 
 
 def register_routes(app: Flask) -> None:
     app.register_blueprint(motion_bp)
+    app.register_blueprint(control_bp)
     app.register_blueprint(telemetry_bp)
+    app.register_blueprint(diagnostics_bp)
     app.register_blueprint(cv_bp)
     app.register_blueprint(sprayer_bp)
     app.register_blueprint(mission_bp)
+    app.register_blueprint(sim_bp)
+    app.register_blueprint(fleet_bp)
     app.register_blueprint(pages_bp)

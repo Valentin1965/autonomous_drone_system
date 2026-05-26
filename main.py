@@ -16,18 +16,88 @@ def load_yaml(path: str):
         return yaml.safe_load(f)
 
 
+def load_system_config(path: str = None) -> dict:
+    if path:
+        return load_yaml(path)
+    from config.config_paths import system_config_path
+
+    return load_yaml(str(system_config_path()))
+
+
+def start_fleet_simulators(system_cfg, logger):
+    """Один симулятор на кожен vehicle у fleet."""
+    from simulator.pixhawk_simulator import PixhawkGPSSimulator
+    from simulator import fleet_registry
+    from web.fleet import get_fleet
+
+    fleet = get_fleet()
+    threads = []
+    for i, (vid, vehicle) in enumerate(fleet.vehicles.items()):
+        bind = vehicle.sim_bind or "udpin:0.0.0.0:14550"
+        logger.info("Симулятор [%s] %s @ %s", vid, vehicle.name, bind)
+        sim = PixhawkGPSSimulator(
+            bind,
+            start_lat=vehicle.start_lat,
+            start_lon=vehicle.start_lon,
+            mavlink_system_id=i + 1,
+        )
+        fleet_registry.register_vehicle(vid, sim)
+
+        def _run(s=sim):
+            s.simulate_movement()
+
+        t = threading.Thread(target=_run, name=f"sim-{vid}", daemon=True)
+        t.start()
+        threads.append(t)
+
+    if fleet.selected_id:
+        fleet_registry.set_active(fleet.selected_id)
+    try:
+        from simulator.registry import register
+
+        active = fleet_registry.get_sim(fleet.selected_id)
+        if active:
+            register(active)
+    except Exception:
+        pass
+    time.sleep(0.5)
+    warmed = fleet.warmup_connections()
+    for vid, st in warmed.items():
+        if st != "ok":
+            logger.warning("Флот [%s] MAVLink: %s", vid, st)
+        else:
+            logger.info("Флот [%s] MAVLink: OK", vid)
+    return threads
+
+
 def start_simulator_background(system_cfg, logger):
-    """MAVLink GPS/FC simulator in a daemon thread."""
+    """MAVLink GPS/FC simulator — флот або один."""
+    from web.fleet import get_fleet
+
+    fleet = get_fleet()
+    if fleet.multi or len(fleet.vehicles) > 1:
+        return start_fleet_simulators(system_cfg, logger)
+
     from mavlink.runtime_config import simulator_bind_string
     from simulator.pixhawk_simulator import PixhawkGPSSimulator
 
     bind = simulator_bind_string(system_cfg)
     logger.info(f"Симулятор (фон): {bind}")
 
+    from simulator import fleet_registry
+
+    v = fleet.selected
+    sim = PixhawkGPSSimulator(
+        bind,
+        start_lat=v.start_lat,
+        start_lon=v.start_lon,
+    )
+    fleet_registry.register_vehicle(v.id, sim)
+    fleet_registry.set_active(v.id)
+
     def _run():
         from simulator.registry import register
 
-        sim = PixhawkGPSSimulator(bind)
         register(sim)
         sim.simulate_movement()
 
@@ -126,16 +196,28 @@ def run_px4_mode(system_cfg, logger, run_mission: bool = False):
 
 
 def run_full_stack(system_cfg, logger, with_cv_hint: bool = False):
-    """Dev: симулятор у фоні + Flask на передньому плані."""
+    """Dev: симулятор (флот) + GCS — основний режим розробки без заліза."""
+    from web.fleet import get_fleet
+
     start_simulator_background(system_cfg, logger)
-    time.sleep(1.5)
+    time.sleep(2.0)
+    fleet = get_fleet()
+    if len(fleet.vehicles) > 1:
+        fleet.warmup_connections()
+    web = system_cfg.get("web", {})
+    port = int(web.get("port", 8080))
     print("─" * 50)
-    print("Dev stack: симулятор + веб-панель")
-    print("  curl -X POST http://127.0.0.1:8080/api/arm")
-    print('  curl -X POST http://127.0.0.1:8080/api/move -H "Content-Type: application/json" \\')
-    print('       -d \'{"forward":0.5,"lateral":0,"yaw":0}\'')
+    print("Ground Rover GCS — симулятор + веб-панель")
+    print(f"  Відкрийте:  http://127.0.0.1:{port}/")
+    if fleet.multi or len(fleet.vehicles) > 1:
+        names = ", ".join(v.name for v in fleet.vehicles.values())
+        print(f"  Флот: {len(fleet.vehicles)} дрони ({names})")
+        print("  · оберіть дрон → свій маршрут → Старт; ручний — лише обраний")
+    print("  · точки на карті (Редагувати: ВКЛ) → Автономний → Старт маршруту")
+    print("  · Ручний: стрілки для обраного дрона")
     if with_cv_hint:
-        print("  CV: http://127.0.0.1:8080/ → «Запустити YOLO»")
+        print("  · CV hybrid: assets/videos/*.mp4")
+    print("  Док: docs/SIM_DEV.md")
     print("─" * 50)
     run_flask_server(system_cfg)
 
@@ -148,9 +230,18 @@ def main():
 Приклади:
   python main.py --simulator     # термінал 1: тільки симулятор
   python main.py --web           # термінал 2: Flask (симулятор окремо)
-  python main.py --full          # один термінал: симулятор + Flask
+  python main.py --full          # симулятор + GCS (+ флот у config/system.yaml)
   python main.py --px4 --mission # реальний / SITL PX4 + місія
+
+Варіант 2 (поле):
+  scripts/run_variant2_rpi.sh   # RPi: CV + MAVLink serial → Pixhawk
+  scripts/run_variant2_gcs.sh   # Станція: GCS + MAVLink radio
         """,
+    )
+    parser.add_argument(
+        "--config",
+        metavar="PATH",
+        help="system.yaml (або SYSTEM_CONFIG=config/system_gcs.yaml)",
     )
     parser.add_argument("--simulator", action="store_true", help="Симулятор MAVLink (foreground)")
     parser.add_argument("--web", action="store_true", help="Тільки Flask")
@@ -180,7 +271,13 @@ def main():
         print("\n→ Швидкий старт:  python main.py --full")
         return
 
-    system_cfg = load_yaml("config/system.yaml")
+    if args.config:
+        os.environ["SYSTEM_CONFIG"] = args.config
+    system_cfg = load_system_config(args.config)
+    dep = system_cfg.get("deployment")
+    role = system_cfg.get("role")
+    if dep == "variant_2":
+        print(f"📋 Розгортання: варіант 2 ({role or 'unknown'})")
     logger = setup_logger(
         "autonomous_drone_system",
         system_cfg.get("logging", {}).get("level", "INFO"),

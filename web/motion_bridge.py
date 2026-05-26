@@ -3,29 +3,46 @@
 
 class MotionBridge:
     def move(self, forward: float, lateral: float, yaw: float = 0.0) -> bool:
-        from web.state import drone_state
+        from web.fleet import get_fleet
 
-        if drone_state.emergency_stop:
+        fleet = get_fleet()
+        if fleet.emergency_stop:
             return False
         try:
-            drone_state.get_controller().set_velocity(forward, lateral, yaw)
-            return True
+            v = fleet.selected
+            mr = v.mission_runner
+            if mr.active:
+                return False
         except Exception:
+            return False
+        try:
+            ctrl = v.get_controller()
+            from simulator import fleet_registry
+
+            if fleet_registry.get_sim(v.id) is not None:
+                try:
+                    ctrl.arm()
+                except Exception:
+                    pass
+            ctrl.set_velocity(forward, lateral, yaw)
+            return True
+        except Exception as e:
+            print(f"[CV] MotionBridge.move failed: {e}")
             return False
 
     def stop(self) -> bool:
-        from web.state import drone_state
+        from web.fleet import get_fleet
 
         try:
-            drone_state.get_controller().stop()
+            get_fleet().selected.get_controller().stop()
             return True
         except Exception:
             return False
 
     def set_sprayer(self, on: bool) -> None:
-        from web.state import drone_state
+        from web.fleet import get_fleet
 
-        drone_state.sprayer_active = bool(on)
+        get_fleet().selected.sprayer_active = bool(on)
 
 
 class PrintMotion:

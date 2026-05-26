@@ -1,5 +1,7 @@
 # Quick start — 5 кроків
 
+**Польове розгортання (варіант 2):** [`VARIANT_2_SETUP.md`](VARIANT_2_SETUP.md) · `scripts/run_variant2_gcs.sh` / `run_variant2_rpi.sh`
+
 ## 1. Середовище
 
 ```bash

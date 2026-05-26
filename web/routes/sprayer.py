@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify
 
+from web.session_log import record
 from web.state import drone_state, logger
 from web.tracker_service import get_tracker
 
@@ -22,7 +23,18 @@ def api_sprayer_off():
 
 @sprayer_bp.route("/api/emergency/stop", methods=["POST"])
 def api_emergency_stop():
-    drone_state.emergency_stop = True
+    from simulator import fleet_registry
+    from web.fleet import get_fleet
+
+    fleet = get_fleet()
+    fleet.emergency_stop = True
+    for v in fleet.vehicles.values():
+        v.mission_runner.stop()
+        try:
+            v.get_controller().stop()
+        except Exception:
+            pass
+    fleet_registry.halt_all()
     try:
         drone_state.get_controller().stop()
     except Exception:
@@ -33,4 +45,5 @@ def api_emergency_stop():
     except Exception:
         pass
     logger.critical("АВАРІЙНА ЗУПИНКА АКТИВОВАНА!")
+    record("emergency_stop", level="error")
     return jsonify({"status": "emergency_stop"})

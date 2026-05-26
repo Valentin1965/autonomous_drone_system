@@ -1,0 +1,13 @@
+{
+  "format": "gcs_mission_v1",
+  "name": "demo_vineyard_row",
+  "description": "Демо-маршрут ~120 м біля Києва (симулятор)",
+  "default_speed_m_s": 1.0,
+  "waypoints": [
+    { "lat": 50.45010, "lon": 30.52340 },
+    { "lat": 50.45055, "lon": 30.52395 },
+    { "lat": 50.45100, "lon": 30.52450 },
+    { "lat": 50.45145, "lon": 30.52505 },
+    { "lat": 50.45190, "lon": 30.52560 }
+  ]
+}

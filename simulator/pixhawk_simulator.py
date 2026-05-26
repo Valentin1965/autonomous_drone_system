@@ -6,20 +6,28 @@ from pymavlink import mavutil
 
 
 class PixhawkGPSSimulator:
-    def __init__(self, connection_string='udpin:0.0.0.0:14550', interactive=None):
+    def __init__(
+        self,
+        connection_string='udpin:0.0.0.0:14550',
+        interactive=None,
+        start_lat=None,
+        start_lon=None,
+        mavlink_system_id=1,
+    ):
+        self.mavlink_system_id = int(mavlink_system_id)
         self.master = mavutil.mavlink_connection(
             connection_string,
-            source_system=1,
+            source_system=self.mavlink_system_id,
             source_component=1
         )
         print(f"Симулятор Pixhawk + GPS запущено на {connection_string}")
 
-        self.lat = 50.4501
-        self.lon = 30.5234
+        self.lat = float(start_lat) if start_lat is not None else 50.4501
+        self.lon = float(start_lon) if start_lon is not None else 30.5234
         self.alt = 150.0
         self.heading = 90.0
         self.speed = 0.0
-        self.target_speed = 1.5
+        self.target_speed = 0.0
         self.target_heading = self.heading
 
         self.target_lat = None
@@ -182,7 +190,7 @@ class PixhawkGPSSimulator:
     def handle_set_position_target_local_ned(self, msg):
         """Velocity or position setpoints in LOCAL_NED / BODY_NED (rover)."""
         with self.lock:
-            if msg.target_system not in (0, 1, self.master.source_system):
+            if not self._accept_target(int(msg.target_system)):
                 return
 
             vx = float(msg.vx)
@@ -212,9 +220,15 @@ class PixhawkGPSSimulator:
                 f"→ speed={self.target_speed:.2f} hdg={self.target_heading:.1f}°"
             )
 
+    def _accept_target(self, target_system: int) -> bool:
+        """GCS (255), broadcast (0), або system id цього симулятора."""
+        if target_system in (0, 255):
+            return True
+        return target_system in (1, self.mavlink_system_id, self.master.source_system)
+
     def handle_set_position_target(self, msg):
         with self.lock:
-            if msg.target_system not in (0, self.master.source_system):
+            if not self._accept_target(int(msg.target_system)):
                 return
 
             if msg.coordinate_frame == mavutil.mavlink.MAV_FRAME_GLOBAL_INT:
@@ -230,6 +244,8 @@ class PixhawkGPSSimulator:
 
                 if msg.vx > 0:
                     self.target_speed = msg.vx / 100.0
+                elif self.target_speed < 0.1:
+                    self.target_speed = 1.0
 
                 print(f"→ SET_POSITION_TARGET_GLOBAL_INT: Lat={self.target_lat:.6f}, Lon={self.target_lon:.6f}, Speed={self.target_speed:.1f} м/с")
 
@@ -290,14 +306,29 @@ class PixhawkGPSSimulator:
 
     def update_position(self, dt=0.1):
         with self.lock:
-            if self.guided_active and self.target_lat is not None and self.armed:
-                bearing = self.calculate_bearing(self.lat, self.lon, self.target_lat, self.target_lon)
-                distance = self.haversine_distance(self.lat, self.lon, self.target_lat, self.target_lon)
+            # Ручний rух: цільова швидкість без GPS-waypoint
+            if (
+                self.guided_active
+                and self.target_lat is None
+                and self.armed
+                and self.target_speed > 0.05
+            ):
+                pass
+            elif self.guided_active and self.target_lat is not None and self.armed:
+                bearing = self.calculate_bearing(
+                    self.lat, self.lon, self.target_lat, self.target_lon
+                )
+                distance = self.haversine_distance(
+                    self.lat, self.lon, self.target_lat, self.target_lon
+                )
+                arrival_m = 2.5
 
-                if distance < 2.0:
+                if distance <= arrival_m:
                     self.target_speed = 0.0
+                    self.speed = 0.0
+                    self.target_lat = None
+                    self.target_lon = None
                     self.guided_active = False
-                    print("✅ Ціль досягнута!")
                 else:
                     self.target_heading = bearing
                     self.target_speed = min(2.5, max(0.5, distance / 5))
@@ -316,7 +347,8 @@ class PixhawkGPSSimulator:
                 if self.speed < 0.05:
                     self.speed = min(self.target_speed, 0.15)
 
-            if self.speed > 0.05:
+            # Рух лише в GUIDED до цільової точки (не дрейф у MANUAL)
+            if self.guided_active and self.speed > 0.05:
                 dist = self.speed * dt
                 br_rad = math.radians(self.heading)
                 R = 6378137.0
@@ -418,6 +450,9 @@ class PixhawkGPSSimulator:
                 "lon": self.lon,
                 "heading": self.heading,
                 "speed": self.speed,
+                "battery_pct": round(self.battery_remaining, 1),
+                "armed": self.armed,
+                "mode": self.mode,
             }
 
 

@@ -1,5 +1,7 @@
 # Architecture — Autonomous Ground Rover System
 
+**Production target:** [variant 2](VARIANT_2_SETUP.md) — RPi companion + Pixhawk + ground station.
+
 ## Decision record (Sprint 1)
 
 | Topic | Decision |
@@ -61,7 +63,9 @@ Env `MAVLINK_PROFILE=px4` switches Flask to `connection_px4`.
 
 ## Computer vision (`cv/tracker.py`)
 
-- Single `YOLOSegmentationTracker` implementation
+- `YOLOSegmentationTracker` + **`cv/depth_row_planner.py`** (vineyard-style depth corridor)
+- **`planner`** in `config/cv.yaml`: `yolo` | `depth` | **`hybrid`** (depth first, YOLO fallback)
+- Pseudo-depth from RGB on video; real depth on Oak-D
 - Motion via `web.motion_bridge.MotionBridge` → `GroundController` (no `requests` loopback)
 - **Default:** `source: video` — files in `assets/videos/` (first `.mp4` if `video_file` empty)
 - Later hardware: set `source: oakd` or `webcam`; env `CV_SOURCE=video|oakd|webcam`

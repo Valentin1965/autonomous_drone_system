@@ -1,0 +1,44 @@
+# Варіант 2 — борт: Raspberry Pi (companion) + Pixhawk
+# Запуск: scripts/run_variant2_rpi.sh  або
+#   export SYSTEM_CONFIG=config/system_rpi.yaml MAVLINK_PROFILE=px4
+#   python main.py --cv
+
+deployment: variant_2
+role: rpi_companion
+
+vehicle:
+  type: ground_rover
+  default_frame: body
+
+mavlink:
+  active: px4
+  # RPi → Pixhawk по USB (перевірте: ls /dev/ttyACM* /dev/serial/by-id/)
+  connection_px4: "serial:/dev/ttyACM0:115200"
+  connection_sim: "udp:127.0.0.1:14550"
+  heartbeat_timeout: 5
+
+# На RPi симулятор не використовується
+simulator:
+  connection_string: "udpin:0.0.0.0:14550"
+
+offboard:
+  rate_hz: 20
+
+mission:
+  file: "config/mission.yaml"
+  arrival_radius_m: 2.5
+  poll_interval_s: 0.2
+  goto_retry_s: 1.5
+  default_speed_m_s: 1.0
+  min_speed_m_s: 0.3
+  max_speed_m_s: 3.0
+
+# Локальний API лише для діагностики (опційно); GCS — на станції
+web:
+  host: "127.0.0.1"
+  port: 8081
+  telemetry_hz: 2
+
+logging:
+  level: INFO
+  log_dir: logs

@@ -1,10 +1,13 @@
 # Computer vision — vineyard row navigation
+# planner: yolo | depth | hybrid  (hybrid = depth коридор + YOLO fallback)
+planner: hybrid
 # Зараз: відеофайли. Після збірки: source: oakd або webcam
 source: video
 video_dir: assets/videos
-video_file: ""              # порожньо = перший .mp4/.avi у video_dir
+video_file: assets/videos/vineyard_demo.mp4   # або "" = перший .mp4 у video_dir
 webcam_index: 0
-fallback_to_synthetic: false # true лише якщо немає відео й камери
+# true = якщо немає .mp4 у assets/videos — синтетичний потік (тест без камери)
+fallback_to_synthetic: true
 
 model_dir: models
 default_model: yolov8s-seg.pt
@@ -12,10 +15,19 @@ confidence: 0.45
 # YOLO: cpu для старих GPU (напр. MX130); auto = перевірка сумісності CUDA
 yolo_device: auto
 
+# Depth corridor (ідеї PIC4SeR vineyard) — pseudo-depth на відео, реальна на oakd
+depth:
+  near_far_ratio: 0.55
+  min_window_area: 2500
+  min_window_area_ratio: 0.02
+  center_band_ratio: 0.35
+  obstacle_close_ratio: 0.32
+
 motion:
   forward_speed: 0.70
   lateral_gain: 0.95
   obstacle_stop_threshold: 0.24
+  depth_obstacle_stop_ratio: 0.32
   sprayer_row_tolerance: 0.12
 
 classes:

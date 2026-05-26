@@ -2,7 +2,10 @@
 
 Наземний автономний робот (rover): MAVLink, симулятор GPS/FC, веб-панель, комп’ютерний зір (виноградник / ряди).
 
+**Цільове розгортання: варіант 2** — RPi (CV) + Pixhawk + станція GCS → [`docs/VARIANT_2_SETUP.md`](docs/VARIANT_2_SETUP.md) · [закупівля + ціни](docs/VARIANT_2_PROCUREMENT.md)
+
 **Архітектура:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)  
+**Розгортання:** [`DEPLOYMENT_PIXHAWK_VS_RPI.md`](docs/DEPLOYMENT_PIXHAWK_VS_RPI.md) · [`DEPLOYMENT_VARIANT_2_VS_3.md`](docs/DEPLOYMENT_VARIANT_2_VS_3.md) (закупівля)  
 **Операційні нотатки (PX4, QGC):** [`Algorithm_autonomous_drone_system.md`](Algorithm_autonomous_drone_system.md)
 
 ## Primary stack (Sprint 1)
@@ -30,7 +33,14 @@ pip install -r requirements-dev.txt
 
 Place YOLO weights in `models/` (e.g. `yolov8s-seg.pt`) or project root; `*.pt` is gitignored.
 
-## Run (development)
+## Run (development — без заліза)
+
+**Рекомендовано:** симулятор + GCS (+ флот, preflight, CV) в одному терміналі:
+
+```bash
+python main.py --full
+# → http://127.0.0.1:8080/   Док: docs/SIM_DEV.md
+```
 
 **Обидва термінали** — з каталогу проєкту та з venv:
 
@@ -69,7 +79,8 @@ python main.py --px4 --mission
 
 Конфіг: `config/system.yaml` → `mavlink.connection_sim` / `connection_px4`, `simulator.connection_string`.
 
-**CV:** `cv/tracker.py` + `MotionBridge`. Зараз — **відеофайли**, пізніше — камери.
+**CV:** `cv/tracker.py` + `depth_row_planner.py` (hybrid depth/YOLO) + `MotionBridge`.  
+`config/cv.yaml` → `planner: hybrid|depth|yolo`. Зараз — **відеофайли** (псевдо-depth), з Oak-D — реальна глибина.
 
 1. Покладіть відео в [`assets/videos/`](assets/videos/README.md) (наприклад `vineyard_demo.mp4`)
 2. У `config/cv.yaml`: `source: video` (вже так)

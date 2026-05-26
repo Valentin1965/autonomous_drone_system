@@ -1,0 +1,23 @@
+# ArduPilot Rover — стартові параметри для варіанту 2 (ground rover)
+# Імпорт: QGroundControl → Vehicle Setup → Parameters → Load from file
+# Перевірте FRAME_CLASS, SERVO*, EK3_* під вашу платформу.
+
+FRAME_CLASS,1
+FRAME_TYPE,0
+
+# Швидкість / навігація (налаштувати під масу робота)
+WP_SPEED,100
+CRUISE_SPEED,100
+RTL_SPEED,100
+
+# Failsafe (приклад — перевірте законодавство та безпеку)
+FS_GCS_ENABLE,1
+FS_ACTION,2
+
+# GPS
+GPS_TYPE,1
+EK3_ENABLE,1
+
+# Serial TELEM (типовий порт — змініть у QGC)
+SERIAL1_PROTOCOL,2
+SERIAL1_BAUD,57

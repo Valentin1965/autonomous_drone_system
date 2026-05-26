@@ -1,0 +1,11 @@
+count: 1
+default_vehicle: rover_1
+enabled: true
+vehicles:
+- color: '#ff9800'
+  id: rover_1
+  mavlink_connection: udp:127.0.0.1:14550
+  name: Rover 1
+  sim_bind: udpin:0.0.0.0:14550
+  start_lat: 50.4501
+  start_lon: 30.5234

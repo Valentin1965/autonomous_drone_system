@@ -1,5 +1,5 @@
 """
-YOLOv8 segmentation row navigation — single implementation for Flask and CLI.
+YOLOv8 + depth corridor row navigation — Flask, CLI, hybrid planner.
 """
 
 from __future__ import annotations
@@ -8,12 +8,13 @@ import os
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Dict, Optional, Protocol, Tuple
 
 import cv2
 import numpy as np
 import yaml
-from ultralytics import YOLO
+
+from cv.depth_row_planner import DepthPlanResult, DepthRowPlanner
 
 
 class MotionControl(Protocol):
@@ -22,27 +23,62 @@ class MotionControl(Protocol):
     def set_sprayer(self, on: bool) -> None: ...
 
 
-def load_cv_config(path: str = "config/cv.yaml") -> Dict[str, Any]:
+def load_cv_config(path: str = None) -> Dict[str, Any]:
+    if path is None:
+        try:
+            from config.config_paths import cv_config_path
+
+            path = cv_config_path()
+        except ImportError:
+            path = "config/cv.yaml"
     cfg_path = Path(path)
+    if not cfg_path.is_file():
+        root = Path(__file__).resolve().parent.parent
+        cfg_path = root / path
     if not cfg_path.is_file():
         return {}
     with open(cfg_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
+def _project_root() -> Path:
+    try:
+        from config.config_paths import project_root
+
+        return project_root()
+    except ImportError:
+        return Path(__file__).resolve().parent.parent
+
+
+def _resolve_media_path(path_str: str, root: Path) -> Optional[Path]:
+    """Абсолютний або відносний шлях від кореня проєкту."""
+    p = Path(path_str)
+    if p.is_file():
+        return p.resolve()
+    candidate = root / path_str
+    if candidate.is_file():
+        return candidate.resolve()
+    return None
+
+
 def resolve_video_path(cfg: Dict[str, Any]) -> str:
-    """Шлях до відео: video_file або перший файл у video_dir."""
+    """Шлях до відео: video_file або перший файл у video_dir (від кореня проєкту)."""
+    root = _project_root()
     vf = (cfg.get("video_file") or "").strip()
     if vf:
-        p = Path(vf)
-        if p.is_file():
-            return str(p.resolve())
-    vdir = Path(cfg.get("video_dir", "assets/videos"))
+        resolved = _resolve_media_path(vf, root)
+        if resolved:
+            return str(resolved)
+    vdir_raw = cfg.get("video_dir", "assets/videos")
+    vdir = Path(vdir_raw) if Path(vdir_raw).is_absolute() else root / vdir_raw
     if vdir.is_dir():
         for pattern in ("*.mp4", "*.avi", "*.mov", "*.mkv", "*.MP4", "*.AVI"):
             found = sorted(vdir.glob(pattern))
             if found:
                 return str(found[0].resolve())
+    demo = vdir / "vineyard_demo.mp4"
+    if demo.is_file():
+        return str(demo.resolve())
     return ""
 
 
@@ -54,9 +90,13 @@ def _resolve_source(
     req = (requested or cfg.get("source") or "video").lower()
 
     if req in ("webcam", "video", "synthetic"):
-        if req == "video" and not video_path and cfg.get("fallback_to_synthetic", False):
-            print("[CV] Немає відеофайлу → synthetic")
-            return "synthetic"
+        if req == "video" and not video_path:
+            if cfg.get("fallback_to_synthetic", False):
+                print(
+                    "[CV] Немає відео в assets/videos — синтетичний потік "
+                    "(покладіть .mp4 або вимкніть fallback_to_synthetic)"
+                )
+                return "synthetic"
         return req
 
     if req == "oakd":
@@ -154,7 +194,16 @@ class YOLOSegmentationTracker:
         self.forward_speed = float(motion_cfg.get("forward_speed", 0.70))
         self.lateral_gain = float(motion_cfg.get("lateral_gain", 0.95))
         self.obstacle_stop_threshold = float(motion_cfg.get("obstacle_stop_threshold", 0.24))
+        self.depth_obstacle_threshold = float(
+            motion_cfg.get("depth_obstacle_stop_ratio", 0.32)
+        )
         self.sprayer_tolerance = float(motion_cfg.get("sprayer_row_tolerance", 0.12))
+        self.planner_mode = (self.cfg.get("planner") or "hybrid").strip().lower()
+        if self.planner_mode not in ("yolo", "depth", "hybrid"):
+            self.planner_mode = "hybrid"
+        self._depth_planner = DepthRowPlanner(self.cfg)
+        self._nav_source = "—"
+        self._status_lock = threading.Lock()
         self.cls_traversable = classes.get("traversable", "traversable")
         self.cls_obstacle = classes.get("obstacle", "obstacle")
         self.confidence = float(self.cfg.get("confidence", 0.45))
@@ -164,13 +213,18 @@ class YOLOSegmentationTracker:
         env_source = os.environ.get("CV_SOURCE", "").strip().lower() or None
         self.fallback_to_synthetic = bool(self.cfg.get("fallback_to_synthetic", False))
         self.video_file = resolve_video_path(self.cfg)
+        if self.video_file:
+            print(f"[CV] Відеофайл: {self.video_file}")
         self.webcam_index = int(self.cfg.get("webcam_index", 0))
 
         self.motion = motion
         self.running = False
         self.thread: Optional[threading.Thread] = None
         self.model = None
+        self._yolo_enabled = self.planner_mode != "depth"
         self.device = None  # DepthAI OAK-D
+        self._oakd_rgb_queue = None
+        self._oakd_depth_queue = None
         self._yolo_device = "cpu"
         self._cap = None
         self._sprayer_on = False
@@ -205,26 +259,96 @@ class YOLOSegmentationTracker:
             return str(max(pt_files, key=os.path.getmtime))
         return default
 
+    def _load_yolo_model(self) -> bool:
+        """Повертає True якщо YOLO завантажено."""
+        try:
+            from ultralytics import YOLO
+        except ImportError as e:
+            print(f"[CV] ultralytics не встановлено: {e}")
+            return False
+        try:
+            model_path = self.get_best_model_path()
+            self._yolo_device = resolve_yolo_device(self.cfg)
+            self.model = YOLO(model_path)
+            print(f"[CV] YOLO завантажено: {model_path} (device={self._yolo_device})")
+            return True
+        except Exception as e:
+            print(f"[CV] YOLO не завантажено: {e}")
+            return False
+
+    def _prime_first_frame(self) -> None:
+        """Один кадр до старту потоку — MJPEG одразу показує відео."""
+        frame, depth_raw = self._read_rgb_depth()
+        if frame is None:
+            return
+        h, w = frame.shape[:2]
+        use_depth = self.planner_mode in ("depth", "hybrid")
+        display = frame
+        if use_depth:
+            depth_u8 = self._depth_map_for_frame(frame, depth_raw)
+            plan = self._depth_planner.plan(
+                depth_u8, w, self.depth_obstacle_threshold
+            )
+            display = self._depth_planner.draw_overlay(frame, depth_u8, plan)
+        self._publish_jpeg(display, force=True)
+
     def start(self):
         if self.running:
             return {"status": "already_running", "source": self.source}
 
-        model_path = self.get_best_model_path()
-        self._yolo_device = resolve_yolo_device(self.cfg)
-        self.model = YOLO(model_path)
-        print(f"[CV] YOLO завантажено: {model_path} (device={self._yolo_device})")
+        self.model = None
+        self._yolo_enabled = self.planner_mode != "depth"
+        yolo_ok = False
+        if self._yolo_enabled:
+            yolo_ok = self._load_yolo_model()
+            if not yolo_ok:
+                if self.planner_mode == "hybrid":
+                    print("[CV] hybrid → лише depth-коридор (без YOLO)")
+                    self._yolo_enabled = False
+                else:
+                    return {
+                        "status": "error",
+                        "message": (
+                            "YOLO не завантажено. Спробуйте yolo_device: cpu у config/cv.yaml "
+                            "або planner: depth"
+                        ),
+                    }
+        else:
+            print("[CV] planner=depth — YOLO вимкнено")
 
         try:
             self._init_capture()
         except RuntimeError as e:
-            print(f"[CV] Помилка захоплення: {e}")
-            return {"status": "error", "message": str(e)}
+            msg = str(e)
+            if self.fallback_to_synthetic and self.source != "synthetic":
+                print(f"[CV] {msg} → synthetic")
+                self._init_synthetic()
+            else:
+                print(f"[CV] Помилка захоплення: {msg}")
+                return {"status": "error", "message": msg}
+
+        try:
+            self._prime_first_frame()
+        except Exception as e:
+            print(f"[CV] Попередній кадр: {e}")
 
         self.running = True
         self.thread = threading.Thread(target=self._tracking_loop, daemon=True)
         self.thread.start()
-        print(f"[CV] Трекер запущено (джерело: {self.source}, motion: {type(self.motion).__name__})")
-        return {"status": "started", "source": self.source}
+        effective = self.planner_mode
+        if self.planner_mode == "hybrid" and not self._yolo_enabled:
+            effective = "hybrid (depth)"
+        print(
+            f"[CV] Трекер: planner={effective}, "
+            f"джерело={self.source}, motion={type(self.motion).__name__}"
+        )
+        return {
+            "status": "started",
+            "source": self.source,
+            "planner": self.planner_mode,
+            "yolo": yolo_ok,
+            "effective_planner": effective,
+        }
 
     def stop(self):
         self.running = False
@@ -236,6 +360,8 @@ class YOLOSegmentationTracker:
             except Exception:
                 pass
             self.device = None
+        self._oakd_rgb_queue = None
+        self._oakd_depth_queue = None
         if self._cap:
             self._cap.release()
             self._cap = None
@@ -273,8 +399,14 @@ class YOLOSegmentationTracker:
         xout_rgb.setStreamName("rgb")
         cam_rgb.preview.link(xout_rgb.input)
 
+        xout_depth = pipeline.create(dai.node.XLinkOut)
+        xout_depth.setStreamName("depth")
+        stereo.depth.link(xout_depth.input)
+
         self.device = dai.Device(pipeline)
-        print("[CV] Oak-D RGB готово")
+        self._oakd_rgb_queue = self.device.getOutputQueue("rgb", 4, False)
+        self._oakd_depth_queue = self.device.getOutputQueue("depth", 4, False)
+        print("[CV] Oak-D RGB + depth готово")
 
     def _init_capture(self):
         if self.source == "oakd":
@@ -334,22 +466,52 @@ class YOLOSegmentationTracker:
         self._synthetic_t = 0
         print("[CV] Синтетичний потік 640x480 (тест без камери)")
 
-    def _read_frame(self):
-        if self.source == "oakd" and self.device:
-            q = self.device.getOutputQueue("rgb", 4, False)
-            msg = q.get()
-            return msg.getCvFrame()
+    def _read_rgb_depth(self) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+        """Пара (BGR, depth uint8/uint16 або None)."""
+        if self.source == "oakd" and self.device and self._oakd_rgb_queue:
+            msg = self._oakd_rgb_queue.get()
+            frame = msg.getCvFrame()
+            depth = None
+            if self._oakd_depth_queue:
+                dmsg = self._oakd_depth_queue.tryGet()
+                if dmsg is not None:
+                    depth = dmsg.getFrame()
+            return frame, depth
+
         if self.source == "synthetic":
-            return self._read_synthetic_frame()
+            frame = self._read_synthetic_frame()
+            return frame, None
         if self._cap:
             ok, frame = self._cap.read()
             if ok:
-                return frame
+                return frame, None
             if self.source == "video":
                 self._cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 ok, frame = self._cap.read()
-                return frame if ok else None
-        return None
+                return (frame, None) if ok else (None, None)
+        return None, None
+
+    def _depth_map_for_frame(
+        self, frame: np.ndarray, depth_raw: Optional[np.ndarray]
+    ) -> np.ndarray:
+        h, w = frame.shape[:2]
+        if depth_raw is not None:
+            return self._depth_planner.normalize_depth(depth_raw, (h, w))
+        return self._depth_planner.pseudo_depth_from_rgb(frame)
+
+    def get_public_status(self) -> Dict[str, Any]:
+        with self._status_lock:
+            nav = self._nav_source
+        return {
+            "running": self.running,
+            "source": self.source,
+            "planner": self.planner_mode,
+            "nav_source": nav,
+        }
+
+    def _set_nav_source(self, src: str) -> None:
+        with self._status_lock:
+            self._nav_source = src
 
     def _read_synthetic_frame(self):
         w, h = 640, 480
@@ -367,77 +529,160 @@ class YOLOSegmentationTracker:
         )
         return frame
 
+    def _run_yolo(self, frame: np.ndarray):
+        if self.model is None:
+            return []
+        try:
+            return self.model(
+                frame, verbose=False, conf=self.confidence, device=self._yolo_device,
+            )
+        except RuntimeError as e:
+            if self._yolo_device != "cpu":
+                print(f"[CV] Помилка CUDA ({e}) → повтор на CPU")
+                self._yolo_device = "cpu"
+                return self.model(
+                    frame, verbose=False, conf=self.confidence, device="cpu",
+                )
+            raise
+
+    def _parse_yolo_masks(self, results, h: int, w: int):
+        left_mask = right_mask = None
+        obstacle_area = 0.0
+        for r in results:
+            if not r.masks:
+                continue
+            for i, mask_t in enumerate(r.masks.data):
+                cls_name = self.model.names[int(r.boxes.cls[i])]
+                mask = (mask_t.cpu().numpy() * 255).astype(np.uint8)
+                area = np.sum(mask > 0) / (h * w)
+                if cls_name == self.cls_traversable:
+                    mid = w // 2
+                    if np.sum(mask[:, :mid]) > np.sum(mask[:, mid:]):
+                        left_mask = mask
+                    else:
+                        right_mask = mask
+                elif cls_name == self.cls_obstacle:
+                    obstacle_area += area
+        return left_mask, right_mask, obstacle_area
+
+    def _loop_sleep(self) -> None:
+        time.sleep(1.0 / max(1.0, self._stream_fps))
+
     def _tracking_loop(self):
+        use_yolo = (
+            self.planner_mode in ("yolo", "hybrid")
+            and self._yolo_enabled
+            and self.model is not None
+        )
+        use_depth = self.planner_mode in ("depth", "hybrid")
+
+        try:
+            self._tracking_loop_body(use_yolo, use_depth)
+        except Exception as e:
+            print(f"[CV] Fatal error in tracking loop: {e}")
+            import traceback
+
+            traceback.print_exc()
+            self._do_stop()
+        finally:
+            self.running = False
+
+    def _tracking_loop_body(self, use_yolo: bool, use_depth: bool):
         while self.running:
-            if self._is_emergency():
-                self._do_stop()
-                time.sleep(0.1)
-                continue
-
-            frame = self._read_frame()
-            if frame is None:
-                continue
-
-            h, w = frame.shape[:2]
             try:
-                results = self.model(
-                    frame, verbose=False, conf=self.confidence, device=self._yolo_device,
-                )
-            except RuntimeError as e:
-                if self._yolo_device != "cpu":
-                    print(f"[CV] Помилка CUDA ({e}) → повтор на CPU")
-                    self._yolo_device = "cpu"
-                    results = self.model(
-                        frame, verbose=False, conf=self.confidence, device="cpu",
-                    )
-                else:
-                    raise
-
-            left_mask = right_mask = None
-            obstacle_area = 0.0
-
-            for r in results:
-                if not r.masks:
+                if self._is_emergency():
+                    self._do_stop()
+                    self._set_nav_source("stop")
                     continue
-                for i, mask_t in enumerate(r.masks.data):
-                    cls_name = self.model.names[int(r.boxes.cls[i])]
-                    mask = (mask_t.cpu().numpy() * 255).astype(np.uint8)
-                    area = np.sum(mask > 0) / (h * w)
 
-                    if cls_name == self.cls_traversable:
-                        mid = w // 2
-                        if np.sum(mask[:, :mid]) > np.sum(mask[:, mid:]):
-                            left_mask = mask
-                        else:
-                            right_mask = mask
-                    elif cls_name == self.cls_obstacle:
-                        obstacle_area += area
+                frame, depth_raw = self._read_rgb_depth()
+                if frame is None:
+                    continue
 
-            if obstacle_area > self.obstacle_stop_threshold:
-                self._do_stop()
-                cv2.putText(
-                    frame, "STOP - OBSTACLE!", (50, 70),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 255), 4,
+                h, w = frame.shape[:2]
+                left_mask = right_mask = None
+                obstacle_area = 0.0
+                depth_plan = None
+                depth_u8 = None
+
+                if use_depth:
+                    depth_u8 = self._depth_map_for_frame(frame, depth_raw)
+                    depth_plan = self._depth_planner.plan(
+                        depth_u8, w, self.depth_obstacle_threshold
+                    )
+
+                if use_yolo:
+                    results = self._run_yolo(frame)
+                    left_mask, right_mask, obstacle_area = self._parse_yolo_masks(
+                        results, h, w
+                    )
+
+                yolo_stop = obstacle_area > self.obstacle_stop_threshold
+                depth_stop = bool(
+                    depth_plan and depth_plan.stopped
+                    and depth_plan.obstacle_ratio >= self.depth_obstacle_threshold
                 )
-                self._publish_jpeg(frame)
+
+                if yolo_stop or depth_stop:
+                    self._do_stop()
+                    self._set_nav_source("obstacle")
+                    display = frame.copy()
+                    cv2.putText(
+                        display, "STOP - OBSTACLE!", (50, 70),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 255), 4,
+                    )
+                    if depth_u8 is not None and depth_plan is not None:
+                        display = self._depth_planner.draw_overlay(
+                            display, depth_u8, depth_plan
+                        )
+                    self._publish_jpeg(display)
+                    if self.show_window:
+                        self._show(display)
+                    continue
+
+                offset = None
+                nav_src = "—"
+
+                if use_depth and depth_plan and depth_plan.window is not None:
+                    offset = depth_plan.offset
+                    nav_src = "depth"
+
+                if offset is None and use_yolo:
+                    offset = self._center_offset(left_mask, right_mask, w)
+                    nav_src = "yolo"
+
+                if offset is None:
+                    self._do_stop()
+                    self._set_nav_source("lost")
+                    self._publish_jpeg(frame)
+                    continue
+
+                forward = self.forward_speed
+                lateral = offset * self.lateral_gain
+                self._do_move(forward, lateral)
+                self._update_sprayer(offset)
+                self._set_nav_source(nav_src)
+
+                if use_depth and depth_u8 is not None and depth_plan is not None:
+                    dp = DepthPlanResult(
+                        offset=offset,
+                        source=nav_src,
+                        window=depth_plan.window,
+                        obstacle_ratio=depth_plan.obstacle_ratio,
+                    )
+                    display = self._depth_planner.draw_overlay(frame, depth_u8, dp)
+                    if use_yolo and (left_mask is not None or right_mask is not None):
+                        display = self._overlay(display, left_mask, right_mask, w)
+                else:
+                    display = self._overlay(frame, left_mask, right_mask, w)
+
+                self._publish_jpeg(display)
                 if self.show_window:
-                    self._show(frame)
-                continue
-
-            offset = self._center_offset(left_mask, right_mask, w)
-            forward = self.forward_speed
-            lateral = offset * self.lateral_gain
-            self._do_move(forward, lateral)
-            self._update_sprayer(offset)
-
-            display = self._overlay(frame, left_mask, right_mask, w)
-            self._publish_jpeg(display)
-
-            if self.show_window:
-                self._show(display)
-
-            if self.show_window and cv2.waitKey(1) & 0xFF == 27:
-                break
+                    self._show(display)
+                if self.show_window and cv2.waitKey(1) & 0xFF == 27:
+                    break
+            finally:
+                self._loop_sleep()
 
     def _overlay(self, frame, left_mask, right_mask, w):
         h = frame.shape[0]
@@ -453,11 +698,15 @@ class YOLOSegmentationTracker:
         cv2.line(overlay, (w // 2, 0), (w // 2, h), (0, 255, 255), 2)
         return overlay
 
-    def _publish_jpeg(self, frame) -> None:
+    def _publish_jpeg(self, frame, force: bool = False) -> None:
         """Останній кадр для MJPEG у веб-панелі."""
         interval = 1.0 / max(1.0, self._stream_fps)
         now = time.time()
-        if getattr(self, "_last_publish_t", 0) and now - self._last_publish_t < interval:
+        if (
+            not force
+            and getattr(self, "_last_publish_t", 0)
+            and now - self._last_publish_t < interval
+        ):
             return
         self._last_publish_t = now
         ok, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 72])

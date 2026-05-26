@@ -68,6 +68,22 @@ def test_sim_exposes_position(sim):
     assert "lat" in pos
 
 
+def test_global_int_setpoint_sets_target(sim):
+    msg = SimpleNamespace(
+        target_system=1,
+        coordinate_frame=mavutil.mavlink.MAV_FRAME_GLOBAL_INT,
+        lat_int=int(50.451 * 1e7),
+        lon_int=int(30.524 * 1e7),
+        vx=100,
+        vy=0,
+        vz=0,
+    )
+    sim.handle_set_position_target(msg)
+    assert sim.guided_active is True
+    assert abs(sim.target_lat - 50.451) < 0.0001
+    assert sim.target_speed == 1.0
+
+
 def test_disarm_stops_motion(sim):
     sim.armed = True
     sim.target_speed = 1.5
