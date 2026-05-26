@@ -13,6 +13,9 @@ def setup_logger(name: str, level: str = "INFO", log_dir: str = "logs") -> loggi
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, level.upper(), logging.INFO))
 
+    if logger.handlers:
+        return logger
+
     fmt = logging.Formatter("[%(asctime)s] [%(levelname)s] %(name)s: %(message)s")
 
     # Console output

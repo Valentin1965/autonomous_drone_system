@@ -1,3 +1,4 @@
+import os
 import time
 import math
 import threading
@@ -5,7 +6,7 @@ from pymavlink import mavutil
 
 
 class PixhawkGPSSimulator:
-    def __init__(self, connection_string='udpin:0.0.0.0:14550'):
+    def __init__(self, connection_string='udpin:0.0.0.0:14550', interactive=None):
         self.master = mavutil.mavlink_connection(
             connection_string,
             source_system=1,
@@ -36,12 +37,30 @@ class PixhawkGPSSimulator:
 
         self.running = True
         self.lock = threading.Lock()
+        self._boot_mono = time.monotonic()
 
         self.recv_thread = threading.Thread(target=self.receive_messages, daemon=True)
         self.recv_thread.start()
 
-        self.cmd_thread = threading.Thread(target=self.command_listener, daemon=True)
-        self.cmd_thread.start()
+        if interactive is None:
+            interactive = os.environ.get("DRONE_SIM_INTERACTIVE", "0").lower() in (
+                "1", "true", "yes",
+            )
+        self.cmd_thread = None
+        if interactive:
+            self.cmd_thread = threading.Thread(target=self.command_listener, daemon=True)
+            self.cmd_thread.start()
+
+    def _time_boot_ms(self) -> int:
+        """MAVLink uint32 ms since boot — not Unix epoch."""
+        return int((time.monotonic() - self._boot_mono) * 1000) & 0xFFFFFFFF
+
+    def _time_usec(self) -> int:
+        return int((time.monotonic() - self._boot_mono) * 1_000_000) & 0xFFFFFFFFFFFFFFFF
+
+    def _heading_cdeg(self) -> int:
+        h = int(self.heading * 100) % 36000
+        return max(0, min(65535, h))
 
     def send_heartbeat(self):
         base_mode = 0
@@ -65,59 +84,73 @@ class PixhawkGPSSimulator:
         sensors_enabled = 0
         sensors_health = 0
 
+        # pymavlink 2.4.x: errors_count1..4 required; battery_remaining = int %
         self.master.mav.sys_status_send(
-            sensors_present,
-            sensors_enabled,
-            sensors_health,
+            int(sensors_present),
+            int(sensors_enabled),
+            int(sensors_health),
             500,
             12000,
             int(self.battery_current * 100),
-            self.battery_remaining,
-            0, 0, 0, 0
+            int(round(self.battery_remaining)),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
         )
 
     def send_battery_status(self):
+        """BATTERY_STATUS — pymavlink 2.4.x expects 10 positional args."""
         voltages = [int(self.battery_voltage * 1000)] + [0] * 9
-        self.master.mav.bbattery_status_send(
+        self.master.mav.battery_status_send(
             0,
             mavutil.mavlink.MAV_BATTERY_FUNCTION_ALL,
             mavutil.mavlink.MAV_BATTERY_TYPE_LIPO,
             0,
             voltages,
             int(self.battery_current * 100),
-            int(self.battery_voltage * 1000),
             -1,
-            self.battery_remaining,
-            0, 0, 0
+            -1,
+            int(self.battery_remaining),
         )
 
     def send_gps_raw_int(self):
         lat_int = int(self.lat * 1e7)
         lon_int = int(self.lon * 1e7)
+        spd = max(-32768, min(32767, int(self.speed * 100)))
         self.master.mav.gps_raw_int_send(
-            int(time.time() * 1e6),
+            self._time_usec(),
             self.fix_type,
             lat_int,
             lon_int,
             int(self.alt * 1000),
             200,
             300,
-            int(self.speed * 100),
-            int(self.heading * 100),
-            self.satellites_visible
+            spd,
+            self._heading_cdeg(),
+            self.satellites_visible,
         )
 
     def send_global_position_int(self):
+        alt_mm = int(self.alt * 1000)
+        hdg_rad = math.radians(self.heading)
+        # vx/vy — см/с у NED (північ / схід)
+        vx_cm = int(self.speed * 100 * math.cos(hdg_rad))
+        vy_cm = int(self.speed * 100 * math.sin(hdg_rad))
+        vx_cm = max(-32768, min(32767, vx_cm))
+        vy_cm = max(-32768, min(32767, vy_cm))
         self.master.mav.global_position_int_send(
-            int(time.time() * 1e3),
+            self._time_boot_ms(),
             int(self.lat * 1e7),
             int(self.lon * 1e7),
-            int(self.alt * 1000),
-            int(self.alt * 1000),
-            int(self.speed * 100),
+            alt_mm,
+            alt_mm,
+            vx_cm,
+            vy_cm,
             0,
-            0,
-            int(self.heading * 100)
+            self._heading_cdeg(),
         )
 
     def receive_messages(self):
@@ -133,6 +166,9 @@ class PixhawkGPSSimulator:
                 if msg_type == "SET_POSITION_TARGET_GLOBAL_INT":
                     self.handle_set_position_target(msg)
 
+                elif msg_type == "SET_POSITION_TARGET_LOCAL_NED":
+                    self.handle_set_position_target_local_ned(msg)
+
                 elif msg_type == "COMMAND_LONG":
                     self.handle_command_long(msg)
 
@@ -143,14 +179,53 @@ class PixhawkGPSSimulator:
                 print(f"Помилка прийому: {e}")
                 time.sleep(0.1)
 
+    def handle_set_position_target_local_ned(self, msg):
+        """Velocity or position setpoints in LOCAL_NED / BODY_NED (rover)."""
+        with self.lock:
+            if msg.target_system not in (0, 1, self.master.source_system):
+                return
+
+            vx = float(msg.vx)
+            vy = float(msg.vy)
+            speed = math.hypot(vx, vy)
+
+            if speed < 0.02:
+                self.target_speed = 0.0
+                return
+
+            frame = msg.coordinate_frame
+            if frame == mavutil.mavlink.MAV_FRAME_BODY_NED:
+                heading_rad = math.radians(self.heading)
+                vn = vx * math.cos(heading_rad) - vy * math.sin(heading_rad)
+                ve = vx * math.sin(heading_rad) + vy * math.cos(heading_rad)
+                self.target_heading = math.degrees(math.atan2(ve, vn)) % 360
+            else:
+                self.target_heading = math.degrees(math.atan2(vy, vx)) % 360
+
+            self.target_speed = min(2.5, max(0.0, speed))
+            self.guided_active = True
+            if not self.armed:
+                self.armed = True
+            self.mode = "GUIDED"
+            print(
+                f"→ SET_POSITION_TARGET_LOCAL_NED: vx={vx:.2f} vy={vy:.2f} "
+                f"→ speed={self.target_speed:.2f} hdg={self.target_heading:.1f}°"
+            )
+
     def handle_set_position_target(self, msg):
         with self.lock:
             if msg.target_system not in (0, self.master.source_system):
                 return
 
             if msg.coordinate_frame == mavutil.mavlink.MAV_FRAME_GLOBAL_INT:
-                self.target_lat = msg.lat_int / 1e7
-                self.target_lon = msg.lon_int / 1e7
+                lat_raw = getattr(msg, "lat_int", None)
+                if lat_raw is None:
+                    lat_raw = msg.lat
+                lon_raw = getattr(msg, "lon_int", None)
+                if lon_raw is None:
+                    lon_raw = msg.lon
+                self.target_lat = lat_raw / 1e7
+                self.target_lon = lon_raw / 1e7
                 self.guided_active = True
 
                 if msg.vx > 0:
@@ -236,7 +311,12 @@ class PixhawkGPSSimulator:
             self.heading += diff * 1.2 * dt
             self.heading %= 360
 
-            if self.speed > 0.1:
+            # Рух за цільовою швидкістю (velocity setpoint або guided waypoint)
+            if self.armed and self.target_speed > 0.05:
+                if self.speed < 0.05:
+                    self.speed = min(self.target_speed, 0.15)
+
+            if self.speed > 0.05:
                 dist = self.speed * dt
                 br_rad = math.radians(self.heading)
                 R = 6378137.0
@@ -295,27 +375,50 @@ class PixhawkGPSSimulator:
                 last_heartbeat = t
 
             if t - last_sys > 1.0:
-                self.send_sys_status()
+                try:
+                    self.send_sys_status()
+                except TypeError as e:
+                    print(f"⚠ sys_status_send: {e}")
                 last_sys = t
 
             if t - last_batt > 2.0:
-                self.send_battery_status()
+                try:
+                    self.send_battery_status()
+                except TypeError as e:
+                    print(f"⚠ battery_status_send: {e}")
                 last_batt = t
 
             if t - last_gps > 0.1:
                 self.update_position(dt=0.1)
-                self.send_gps_raw_int()
-                self.send_global_position_int()
+                try:
+                    self.send_gps_raw_int()
+                    self.send_global_position_int()
+                except TypeError as e:
+                    print(f"⚠ GPS send: {e}")
                 last_gps = t
 
-            if int(t) % 2 == 0:
+            if int(t) % 5 == 0 and int(t) != getattr(self, "_last_print_t", -1):
+                self._last_print_t = int(t)
                 status = "GUIDED →" if self.guided_active else ""
-                print(f"→ {status} Lat: {self.lat:.6f}, Lon: {self.lon:.6f} | Speed: {self.speed:.1f} м/с | Heading: {self.heading:.1f}° | Mode: {self.mode} | Armed: {self.armed}")
+                print(
+                    f"→ {status} Lat: {self.lat:.6f}, Lon: {self.lon:.6f} | "
+                    f"Speed: {self.speed:.1f} м/с | Heading: {self.heading:.1f}° | "
+                    f"Mode: {self.mode} | Armed: {self.armed}"
+                )
 
             time.sleep(0.01)
 
     def stop(self):
         self.running = False
+
+    def get_position(self) -> dict:
+        with self.lock:
+            return {
+                "lat": self.lat,
+                "lon": self.lon,
+                "heading": self.heading,
+                "speed": self.speed,
+            }
 
 
 if __name__ == "__main__":

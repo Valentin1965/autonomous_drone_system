@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+
+# ROS 2 colcon (workspace root only)
+/build/
+/install/
+/log/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+
+# Logs & runtime
+logs/
+*.log
+
+# ML weights (keep locally; see models/)
+*.pt
+models/*
+!models/.gitkeep
+
+# Video samples (keep README, ignore large files)
+assets/videos/*
+!assets/videos/README.md
+!assets/videos/.gitkeep
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/

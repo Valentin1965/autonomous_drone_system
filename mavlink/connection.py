@@ -11,7 +11,19 @@ class MavlinkConnection:
     def connect(self):
         if self.logger:
             self.logger.info(f"Connecting to MAVLink on {self.connection_string}...")
-        self.master = mavutil.mavlink_connection(self.connection_string)
+        self.master = mavutil.mavlink_connection(
+            self.connection_string,
+            source_system=255,
+            source_component=190,
+        )
+        # UDP: симулятор дізнається адресу GCS лише після вхідного пакета
+        self.master.mav.heartbeat_send(
+            mavutil.mavlink.MAV_TYPE_GCS,
+            mavutil.mavlink.MAV_AUTOPILOT_INVALID,
+            0,
+            0,
+            mavutil.mavlink.MAV_STATE_ACTIVE,
+        )
         self.master.wait_heartbeat(timeout=self.heartbeat_timeout)
         if self.logger:
             self.logger.info("Heartbeat received. MAVLink connected.")

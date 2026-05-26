@@ -1,7 +1,13 @@
-pymavlink
-pyyaml
-opencv-python
-numpy
-flask
-ultralytics
+# Core — ground rover stack (Python + MAVLink + web)
+pymavlink>=2.4.40
+pyyaml>=6.0
+numpy>=1.24.0
+opencv-python>=4.8.0
+flask>=3.0.0
+requests>=2.31.0
 
+# Computer vision
+ultralytics>=8.0.0
+
+# OAK-D camera (optional; CV falls back if import fails — see Sprint 1 Day 4)
+depthai>=2.24.0

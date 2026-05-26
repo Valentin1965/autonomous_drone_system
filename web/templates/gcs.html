@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Станція керування — Ground Rover</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/gcs.css?v=3" />
+</head>
+<body>
+  <header class="top-bar">
+    <h1>Станція керування · Ground Rover</h1>
+    <div id="linkBadge" class="badge off">Немає звʼязку</div>
+  </header>
+
+  <main class="layout">
+    <section class="map-panel">
+      <div id="map"></div>
+      <p id="mapHint" class="overlay-hint">ARM → ▲ рух · клік на карті = точка маршруту</p>
+
+      <div id="cvOverlay" class="cv-overlay hidden">
+        <div class="cv-overlay-header" id="cvDragHandle">
+          <span>CV / YOLO</span>
+          <div class="cv-overlay-btns">
+            <button type="button" id="btnCvMin" title="Згорнути">-</button>
+            <button type="button" id="btnCvClose" title="Сховати">x</button>
+          </div>
+        </div>
+        <img id="cvVideo" alt="CV stream" />
+        <p id="cvVideoHint" class="cv-overlay-hint">Завантаження потоку...</p>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <section class="hud">
+        <h2>Телеметрія</h2>
+        <div class="hud-grid">
+          <div class="hud-item"><span>Звʼязок</span><strong id="hudConnected">—</strong></div>
+          <div class="hud-item"><span>ARM</span><strong id="hudArmed">—</strong></div>
+          <div class="hud-item"><span>Швидкість</span><strong id="hudSpeed">—</strong></div>
+          <div class="hud-item"><span>Lat</span><strong id="hudLat">—</strong></div>
+          <div class="hud-item"><span>Lon</span><strong id="hudLon">—</strong></div>
+          <div class="hud-item"><span>CV</span><strong id="hudCv">—</strong></div>
+          <div class="hud-item"><span>Точок</span><strong id="hudWps">0</strong></div>
+        </div>
+      </section>
+
+      <section class="controls">
+        <h2>Маршрут</h2>
+        <div class="btn-row">
+          <button type="button" class="btn mission active" id="btnMissionMode">Маршрут: ВКЛ</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn mission" id="btnMissionRun">Їхати до 1-ї</button>
+          <button type="button" class="btn mission" id="btnMissionClear">Очистити</button>
+        </div>
+        <p class="hint">Клік на карті — waypoint · ПКМ по маркеру — видалити</p>
+        <ul id="wpList" class="wp-list"></ul>
+      </section>
+
+      <section class="controls">
+        <h2>MAVLink</h2>
+        <div class="btn-row">
+          <button type="button" class="btn arm" id="btnArm">ARM</button>
+          <button type="button" class="btn disarm" id="btnDisarm">DISARM</button>
+        </div>
+        <div class="dpad">
+          <button type="button" class="btn move" data-f="0.5" data-l="0">^</button>
+          <div class="dpad-mid">
+            <button type="button" class="btn move" data-f="0" data-l="-0.5">&lt;</button>
+            <button type="button" class="btn stop" id="btnStop">STOP</button>
+            <button type="button" class="btn move" data-f="0" data-l="0.5">&gt;</button>
+          </div>
+          <button type="button" class="btn move" data-f="-0.3" data-l="0">v</button>
+        </div>
+      </section>
+
+      <section class="controls">
+        <h2>CV / оприскувач</h2>
+        <button type="button" class="btn cv" id="btnCvStart">YOLO (відео)</button>
+        <button type="button" class="btn cv" id="btnCvStop">Зупинити CV</button>
+        <button type="button" class="btn sprayer-off" id="btnSprayer">Оприскувач ВИМК</button>
+        <button type="button" class="btn emergency" id="btnEmergency">Аварійна зупинка</button>
+      </section>
+
+      <section class="log">
+        <h2>Журнал</h2>
+        <pre id="logPanel">Запустіть: python main.py --full</pre>
+      </section>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/js/gcs.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Computer vision — vineyard row navigation
+# Зараз: відеофайли. Після збірки: source: oakd або webcam
+source: video
+video_dir: assets/videos
+video_file: ""              # порожньо = перший .mp4/.avi у video_dir
+webcam_index: 0
+fallback_to_synthetic: false # true лише якщо немає відео й камери
+
+model_dir: models
+default_model: yolov8s-seg.pt
+confidence: 0.45
+# YOLO: cpu для старих GPU (напр. MX130); auto = перевірка сумісності CUDA
+yolo_device: auto
+
+motion:
+  forward_speed: 0.70
+  lateral_gain: 0.95
+  obstacle_stop_threshold: 0.24
+  sprayer_row_tolerance: 0.12
+
+classes:
+  traversable: traversable
+  obstacle: obstacle
+
+stream_fps: 8
+
+display:
+  # false для WSL без X11; true якщо є WSLg або export DISPLAY=:0
+  show_window: false
+  window_title: Vineyard Row Navigation

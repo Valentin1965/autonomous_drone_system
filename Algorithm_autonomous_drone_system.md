@@ -1,5 +1,8 @@
 # Algorithm of actions: ARM, takeoff, missions, offboard, computer vision
 
+> **Ground rover:** primary architecture is documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).  
+> Takeoff/QGC sections below are reference for PX4; daily dev uses `simulator/pixhawk_simulator.py` + `cv/` + `web/`.
+
 ┌──────────────────────────────────────────────────────────────────────┐
 │                        AUTONOMOUS DRONE SYSTEM                        │
 └──────────────────────────────────────────────────────────────────────┘
