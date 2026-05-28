@@ -26,28 +26,46 @@ def _placeholder_jpeg() -> bytes:
 @cv_bp.route("/api/start_tracking", methods=["POST"])
 @cv_bp.route("/api/cv/start", methods=["POST"])
 def api_start_tracking():
+    from flask import request
+
+    from web.fleet import get_fleet, resolve_vehicle_id
+    from web.tracker_service import connect_cv, cv_mode
+
+    data = request.get_json(silent=True) or {}
     try:
-        result = get_tracker().start()
-    except Exception as e:
-        record("cv_start_failed", str(e), level="error")
-        return jsonify({"status": "error", "message": str(e)}), 503
-    if isinstance(result, dict):
-        if result.get("status") == "error":
-            record("cv_start_failed", result.get("message", ""), level="error")
-            return jsonify(result), 503
-        record("cv_start", result.get("planner", ""))
-        return jsonify(result)
-    return jsonify({"status": "started" if result else "already_running"})
+        vid = resolve_vehicle_id(request, data)
+    except KeyError as e:
+        return jsonify({"error": str(e)}), 404
+
+    if cv_mode() == "onboard":
+        msg = "CV на борту (RPi): локальний трекер на GCS вимкнено (cv.mode=onboard)."
+        record("cv_start_blocked", msg, level="error")
+        return jsonify({"status": "error", "message": msg, "mode": "onboard"}), 409
+
+    result = connect_cv(vid, select_vehicle=False)
+    code = 503 if result.get("status") == "error" else 200
+    if result.get("status") == "error":
+        record("cv_start_failed", result.get("message", ""), level="error")
+    else:
+        record("cv_start", f"{vid}:{result.get('source', '')}")
+    return jsonify(result), code
 
 
 @cv_bp.route("/api/stop_tracking", methods=["POST"])
 @cv_bp.route("/api/cv/stop", methods=["POST"])
 def api_stop_tracking():
-    result = get_tracker().stop()
-    record("cv_stop")
-    if isinstance(result, dict):
-        return jsonify(result)
-    return jsonify({"status": "stopped"})
+    from flask import request
+
+    from web.fleet import resolve_vehicle_id
+    from web.tracker_service import disconnect_cv
+
+    data = request.get_json(silent=True) or {}
+    vid = data.get("vehicle_id") or data.get("id")
+    if not vid and request.args.get("vehicle_id"):
+        vid = request.args.get("vehicle_id")
+    result = disconnect_cv(str(vid) if vid else None)
+    record("cv_stop", result.get("vehicle_id", ""))
+    return jsonify(result)
 
 
 @cv_bp.route("/api/cv/target", methods=["POST"])

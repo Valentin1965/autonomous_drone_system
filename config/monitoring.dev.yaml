@@ -1,0 +1,79 @@
+# Dev/sim — профіль моніторингу (remote → analysis server, synthetic-камери)
+# Запуск: bash scripts/run_sim_dev.sh  (піднімає server.main :8090 + GCS)
+
+enabled: true
+default_crop: vineyard
+
+station:
+  id: gcs-dev
+  operator: "dev"
+
+uplink:
+  source: local
+  rpi:
+    host: "127.0.0.1"
+    port: 8081
+    upload_path: "/api/monitoring/upload"
+    wait_timeout_s: 10.0
+    wifi_band: "5GHz"
+  to_server:
+    channel: "lan"
+    notes: "dev: HTTP → analysis server на localhost:8090"
+
+remote:
+  enabled: true
+  mode: remote
+  base_url: "http://127.0.0.1:8090"
+  analyze_path: "/api/v1/analyze"
+  health_path: "/health"
+  timeout_s: 45
+  api_key: ""
+  sync_events: true
+  save_captures: true
+  captures_dir: data/monitoring/captures
+
+offline_queue:
+  enabled: true
+  queue_dir: data/monitoring/outbox
+  retry_interval_s: 30
+  max_retries: 0
+  max_queue_size: 500
+  flush_delay_s: 0.5
+
+cameras:
+  left:
+    type: synthetic
+    source: "0"
+    label: "Ліва (dev)"
+  right:
+    type: synthetic
+    source: "1"
+    label: "Права (dev)"
+
+crops:
+  vineyard:
+    name: "Виноград"
+    issue_labels:
+      - downy_mildew
+      - powdery_mildew
+      - black_rot
+      - spider_mite
+      - leaf_blight
+  banana:
+    name: "Банан"
+    issue_labels:
+      - black_sigatoka
+      - panama_disease
+      - banana_weevil
+      - leaf_spot
+
+survey:
+  dwell_s: 1.0
+  min_confidence: 0.40
+  speed_m_s: 0.6
+  use_cv_frame: false
+
+demo_findings_in_sim: false
+
+storage:
+  findings_file: data/monitoring/findings.json

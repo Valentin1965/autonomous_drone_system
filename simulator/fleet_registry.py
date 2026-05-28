@@ -10,17 +10,32 @@ _sims: Dict[str, Any] = {}
 _active_id: Optional[str] = None
 _manual_expires: Dict[str, float] = {}
 
-DEFAULT_SIM_LAT = 50.4501
-DEFAULT_SIM_LON = 30.5234
+from config.geo_defaults import DEFAULT_LAT as DEFAULT_SIM_LAT
+from config.geo_defaults import DEFAULT_LON as DEFAULT_SIM_LON
 
 
 def register_vehicle(vehicle_id: str, sim: Any) -> None:
     _sims[str(vehicle_id)] = sim
 
 
+def unregister_vehicle(vehicle_id: str) -> None:
+    global _active_id
+    vid = str(vehicle_id)
+    sim = _sims.pop(vid, None)
+    _manual_expires.pop(vid, None)
+    if sim is not None:
+        try:
+            sim.stop()
+        except Exception:
+            pass
+    if _active_id == vid:
+        _active_id = next(iter(_sims), None)
+
+
 def unregister_all() -> None:
     global _active_id, _manual_expires
-    _sims.clear()
+    for vid in list(_sims.keys()):
+        unregister_vehicle(vid)
     _manual_expires.clear()
     _active_id = None
 
@@ -74,7 +89,27 @@ def halt_all() -> None:
         halt_motion(vid)
 
 
+def _mission_blocks_snap(vehicle_id: Optional[str]) -> bool:
+    """Не телепортувати / скидати guided під час місії (паралельний флот)."""
+    if not vehicle_id:
+        return False
+    try:
+        from web.fleet import get_fleet
+
+        phase = (
+            get_fleet()
+            .get_vehicle(str(vehicle_id))
+            .mission_runner.status()
+            .get("phase", "idle")
+        )
+        return phase in ("running", "returning", "paused")
+    except Exception:
+        return False
+
+
 def snap_to(lat: float, lon: float, vehicle_id: Optional[str] = None) -> None:
+    if _mission_blocks_snap(vehicle_id):
+        return
     sim = get_sim(vehicle_id)
     if sim is None:
         return
@@ -117,6 +152,8 @@ def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def snap_to_start_waypoint_if_needed(waypoints, vehicle_id: Optional[str] = None) -> bool:
     """Поставити симулятор на точку 1 маршруту (не на центр карти)."""
+    if _mission_blocks_snap(vehicle_id):
+        return False
     if not waypoints:
         return False
     wp0 = waypoints[0]

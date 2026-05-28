@@ -33,6 +33,8 @@ def start_fleet_simulators(system_cfg, logger):
     fleet = get_fleet()
     threads = []
     for i, (vid, vehicle) in enumerate(fleet.vehicles.items()):
+        if not vehicle.active:
+            continue
         bind = vehicle.sim_bind or "udpin:0.0.0.0:14550"
         logger.info("Симулятор [%s] %s @ %s", vid, vehicle.name, bind)
         sim = PixhawkGPSSimulator(
@@ -77,8 +79,6 @@ def start_simulator_background(system_cfg, logger):
     fleet = get_fleet()
     if fleet.multi or len(fleet.vehicles) > 1:
         return start_fleet_simulators(system_cfg, logger)
-
-    from mavlink.runtime_config import simulator_bind_string
     from simulator.pixhawk_simulator import PixhawkGPSSimulator
 
     bind = simulator_bind_string(system_cfg)
@@ -108,12 +108,25 @@ def start_simulator_background(system_cfg, logger):
 
 def run_flask_server(system_cfg):
     from web.server import app
+    from web.security import api_key_configured, ssl_context
 
     web = system_cfg.get("web", {})
     host = web.get("host", "0.0.0.0")
     port = int(web.get("port", 8080))
-    print(f"🌐 Flask: http://{host}:{port}  (локально http://127.0.0.1:{port})")
-    app.run(host=host, port=port, debug=False, use_reloader=False)
+    ctx = ssl_context()
+    scheme = "https" if ctx else "http"
+    print(f"🌐 Flask: {scheme}://{host}:{port}  (локально {scheme}://127.0.0.1:{port})")
+    if api_key_configured():
+        print("  API : Authorization: Bearer <GCS_API_KEY або web.security.api_key>")
+    if ctx:
+        print("  TLS : увімкнено (web.tls.enabled)")
+    app.run(
+        host=host,
+        port=port,
+        debug=False,
+        use_reloader=False,
+        ssl_context=ctx,
+    )
 
 
 def run_cv_mode(system_cfg, cv_source: str = None):

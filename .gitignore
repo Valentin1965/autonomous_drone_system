@@ -45,4 +45,3 @@ assets/videos/*
 .pytest_cache/
 .coverage
 htmlcov/
-git_arhiv.txt

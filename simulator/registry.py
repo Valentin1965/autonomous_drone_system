@@ -6,8 +6,8 @@ import time
 _sim = None
 _manual_expires = 0.0
 
-DEFAULT_SIM_LAT = 50.4501
-DEFAULT_SIM_LON = 30.5234
+from config.geo_defaults import DEFAULT_LAT as DEFAULT_SIM_LAT
+from config.geo_defaults import DEFAULT_LON as DEFAULT_SIM_LON
 
 
 def register(sim) -> None:

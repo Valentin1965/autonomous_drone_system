@@ -1,0 +1,30 @@
+[Unit]
+Description=Rover CV (Variant 2) — RPi companion
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/autonomous_drone_system
+
+# Опційно: покладіть /etc/rover/rover-cv.env (див. deploy/rover-cv.env.example)
+EnvironmentFile=-/etc/rover/rover-cv.env
+
+# Безпечні дефолти (можна перебити env-файлом вище)
+Environment=SYSTEM_CONFIG=config/system_rpi.yaml
+Environment=CV_CONFIG=config/cv_rpi.yaml
+Environment=MAVLINK_PROFILE=px4
+Environment=CV_SOURCE=oakd
+
+ExecStart=/usr/bin/env bash /home/pi/autonomous_drone_system/scripts/run_variant2_rpi.sh
+Restart=always
+RestartSec=2
+
+# Логи: journalctl -u rover-cv -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

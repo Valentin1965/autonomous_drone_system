@@ -37,3 +37,17 @@ jobs:
           source /opt/ros/${ROS_DISTRO}/setup.bash
           colcon test --event-handlers console_direct+
           colcon test-result --verbose
+
+      - name: Run Python unit tests (non-ROS)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Python deps (light)
+        run: pip install -r requirements-ci-light.txt
+
+      - name: Pytest (repo tests/)
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          DRONE_SIM_INTERACTIVE: "0"
+        run: bash scripts/run_tests.sh

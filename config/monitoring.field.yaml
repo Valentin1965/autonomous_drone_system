@@ -1,0 +1,87 @@
+# Поле (варіант 2) — GCS: камери на RPi, JPEG по Wi-Fi на станцію
+# Запуск: MONITORING_CONFIG=config/monitoring.field.yaml bash scripts/run_variant2_gcs.sh
+
+enabled: true
+default_crop: vineyard
+
+station:
+  id: gcs-1
+  operator: ""
+
+uplink:
+  source: rpi
+  rpi:
+    host: "192.168.1.20"
+    port: 8081
+    upload_path: "/api/monitoring/upload"
+    wait_timeout_s: 12.0
+    upload_token: ""      # опційно: X-Upload-Token на RPi
+    wifi_band: "5GHz"
+  to_server:
+    channel: "5G_modem"
+    notes: "5G-модем станції → сервер аналізу"
+
+remote:
+  enabled: true
+  mode: remote
+  base_url: "http://127.0.0.1:8090"
+  analyze_path: "/api/v1/analyze"
+  health_path: "/health"
+  timeout_s: 45
+  api_key: ""
+  sync_events: true
+  save_captures: true
+  captures_dir: data/monitoring/captures
+
+offline_queue:
+  enabled: true
+  queue_dir: data/monitoring/outbox
+  retry_interval_s: 30
+  max_retries: 0
+  max_queue_size: 500
+  flush_delay_s: 0.5
+
+cameras:
+  left:
+    type: synthetic
+    source: ""
+    label: "RPi ліва"
+  right:
+    type: synthetic
+    source: ""
+    label: "RPi права"
+
+crops:
+  vineyard:
+    name: "Виноград"
+    issue_labels:
+      - downy_mildew
+      - powdery_mildew
+      - black_rot
+      - spider_mite
+      - leaf_blight
+  banana:
+    name: "Банан"
+    issue_labels:
+      - black_sigatoka
+      - panama_disease
+      - banana_weevil
+      - leaf_spot
+  cocoa:
+    name: "Какао"
+    issue_labels:
+      - black_pod
+      - witches_broom
+      - frosty_pod_rot
+      - swollen_shoot
+
+survey:
+  dwell_s: 3.0
+  min_confidence: 0.40
+  speed_m_s: 0.6
+  use_cv_frame: false
+
+demo_findings_in_sim: false
+
+storage:
+  findings_file: data/monitoring/findings.json

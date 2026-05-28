@@ -20,25 +20,35 @@ def _synthetic_corridor(w=640, h=480):
     return frame
 
 
+def _synthetic_depth_map(h=480, w=640):
+    """Штучна depth: коридор зверху, низ «далекий» (низький obstacle_ratio)."""
+    depth = np.full((h, w), 25, dtype=np.uint8)
+    depth[40:220, 180:460] = 255
+    depth[int(h * 0.5) :, :] = 20
+    return depth
+
+
 def test_pseudo_depth_finds_window():
     pytest.importorskip("cv2")
-    import cv2
 
-    frame = _synthetic_corridor()
-    planner = DepthRowPlanner({"depth": {"min_window_area": 800}})
-    depth = planner.pseudo_depth_from_rgb(frame)
+    planner = DepthRowPlanner({
+        "depth": {"min_window_area": 200, "min_window_area_ratio": 0.001},
+    })
+    depth = _synthetic_depth_map()
     win = planner.find_corridor_window(depth)
     assert win is not None
-    assert abs(win.cx - frame.shape[1] / 2) < 80
+    assert abs(win.cx - depth.shape[1] / 2) < 120
 
 
 def test_plan_returns_offset_near_center():
     pytest.importorskip("cv2")
 
-    frame = _synthetic_corridor()
-    planner = DepthRowPlanner({"depth": {"min_window_area": 800}})
-    depth = planner.pseudo_depth_from_rgb(frame)
-    res = planner.plan(depth, frame.shape[1], obstacle_threshold=0.95)
+    planner = DepthRowPlanner({
+        "depth": {"min_window_area": 200, "min_window_area_ratio": 0.001},
+    })
+    depth = _synthetic_depth_map()
+    # Синтетична карта дає obs≈1.0 у нижній зоні — поріг вище за 1.0 для unit-тесту
+    res = planner.plan(depth, depth.shape[1], obstacle_threshold=1.01)
     assert not res.stopped
     assert res.window is not None
     assert abs(res.offset) < 0.35

@@ -23,14 +23,30 @@ def _gps_valid(gps: dict) -> bool:
 
 
 def _mavlink_extras(status: dict) -> dict:
-    from mavlink.runtime_config import client_connection_string, mavlink_profile
-    from simulator.registry import get_sim
-
+    from mavlink.runtime_config import (
+        client_connection_string,
+        mavlink_link_description,
+        mavlink_profile,
+    )
     cfg = drone_state.load_config()
     profile = mavlink_profile(cfg)
-    sim = get_sim() is not None
+    sim = False
+    try:
+        from simulator import fleet_registry
+
+        sim = len(fleet_registry.list_vehicle_ids()) > 0
+    except Exception:
+        pass
+    if not sim:
+        try:
+            from simulator.registry import get_sim
+
+            sim = get_sim() is not None
+        except Exception:
+            sim = False
     out = {
         "mavlink_profile": profile,
+        "mavlink_link": mavlink_link_description(cfg),
         "mavlink_connection": client_connection_string(cfg, profile),
         "simulator_active": sim,
         "heartbeat_age_s": status.get("heartbeat_age_s"),
@@ -87,10 +103,28 @@ def api_status():
         status["vehicle_id"] = v.id
         status["vehicle_name"] = v.name
         status["fleet"] = fleet.fleet_payload()
+        from web import geofence
+        from web.preflight import evaluate
+
+        status["geofence"] = geofence.public_config()
+        status["preflight"] = evaluate(v, mavlink_status=status)
+        try:
+            from monitoring.service import get_monitoring_service
+
+            status["monitoring"] = get_monitoring_service().status(vehicle_id=v.id)
+        except Exception:
+            status["monitoring"] = {"enabled": False}
         status.update(_mavlink_extras(status))
         status["app_version"] = APP_VERSION
         status["uptime_s"] = round(uptime_s(), 1)
         status["ts"] = time.time()
+        try:
+            from monitoring.spray_coverage import tick_fleet, vehicle_summary
+
+            tick_fleet(fleet)
+            status["spray_coverage"] = vehicle_summary(v.id)
+        except Exception:
+            pass
         return jsonify(status)
     except Exception as e:
         logger.error(f"status failed: {e}")

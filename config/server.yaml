@@ -1,0 +1,29 @@
+# Конфіг аналітичного сервера (окремий блок, не GCS/station)
+# Один сервер — необмежена кількість станцій.
+#
+# Запуск: python -m server.main --port 8090
+# або:    python scripts/start_analysis_server.py --port 8090
+
+# База даних SQLite — вся історія флоту: де, коли, що, результат, оператор
+db: data/monitoring/server/fleet.db
+
+# Папка на диску сервера для збереження JPEG з дронів
+captures_dir: data/monitoring/server_captures
+
+# Bearer-токен для захисту API (опційно)
+api_key: ""    # або: export MONITORING_API_KEY=your_secret
+
+# YOLOv8
+device: cpu          # cpu | cuda | mps
+confidence: 0.45     # мінімальна впевненість детекції
+
+# Ваги моделей по культурах (шляхи або env MONITORING_*_WEIGHTS)
+models:
+  # vineyard: /path/to/vineyard.pt
+  # banana:   /path/to/banana.pt
+  # default:  /path/to/default.pt
+
+# ─────────────────────────────────────────────────
+# Flask (якщо не передано через аргументи)
+host: "0.0.0.0"
+port: 8090

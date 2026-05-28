@@ -1,6 +1,12 @@
 # Dev (ПК): python main.py --full
 # Поле варіант 2: config/system_rpi.yaml + config/system_gcs.yaml — docs/VARIANT_2_SETUP.md
 
+# Стартова карта GCS (Тенерифе, Канарські острови)
+gcs:
+  default_center_lat: 28.2916
+  default_center_lon: -16.6291
+  default_zoom: 11
+
 vehicle:
   type: ground_rover
   default_frame: body   # body | earth — /api/set_mode
@@ -17,7 +23,7 @@ simulator:
   connection_string: "udpin:0.0.0.0:14550"
   demo_mission: "config/demo_mission.json"   # опційно: кнопка «Приклад маршруту» у GCS
 
-# Кілька rover (симуляція: 2 UDP-порти; у полі — свій mavlink_connection на дрон)
+# Кілька rover (симуляція: окремий UDP-порт + відео-камера на кожен)
 fleet:
   enabled: true
   default_vehicle: rover_1
@@ -27,22 +33,57 @@ fleet:
       color: "#ff9800"
       mavlink_connection: "udp:127.0.0.1:14550"
       sim_bind: "udpin:0.0.0.0:14550"
-      start_lat: 50.45010
-      start_lon: 30.52340
+      start_lat: 28.29160
+      start_lon: -16.62910
+      video_file: "assets/videos/vineyard_demo.mp4"
     - id: rover_2
       name: "Rover 2"
       color: "#4caf50"
       mavlink_connection: "udp:127.0.0.1:14551"
       sim_bind: "udpin:0.0.0.0:14551"
-      start_lat: 50.45080
-      start_lon: 30.52420
+      start_lat: 28.29200
+      start_lon: -16.62870
+      video_file: "assets/videos/vineyard_demo1.mp4"
+    - id: rover_3
+      name: "Rover 3"
+      color: "#2196f3"
+      mavlink_connection: "udp:127.0.0.1:14552"
+      sim_bind: "udpin:0.0.0.0:14552"
+      start_lat: 28.29240
+      start_lon: -16.62830
+      video_file: "assets/videos/vineyard_demo2.mp4"
+    - id: rover_4
+      name: "Rover 4"
+      color: "#e91e63"
+      mavlink_connection: "udp:127.0.0.1:14553"
+      sim_bind: "udpin:0.0.0.0:14553"
+      start_lat: 28.29280
+      start_lon: -16.62790
+      video_file: "assets/videos/vineyard_demo3.mp4"
+    - id: rover_5
+      name: "Rover 5"
+      color: "#9c27b0"
+      mavlink_connection: "udp:127.0.0.1:14554"
+      sim_bind: "udpin:0.0.0.0:14554"
+      start_lat: 28.29320
+      start_lon: -16.62750
+      video_file: "assets/videos/vineyard_demo4.mp4"
 
 offboard:
   rate_hz: 20
   default_altitude: 3.0
 
+# Геозона за замовч. (до першого збереження оператором у GCS → config/geofence_runtime.yaml)
+geofence:
+  enabled: false
+  min_lat: 28.2750
+  max_lat: 28.3080
+  min_lon: -16.6450
+  max_lon: -16.6130
+
 mission:
   file: "config/mission.yaml"
+  # Має збігатися з симулятором (pixhawk_simulator arrival ~2.5 м)
   arrival_radius_m: 2.5
   poll_interval_s: 0.15
   goto_retry_s: 1.0
@@ -58,6 +99,13 @@ web:
   host: "0.0.0.0"
   port: 8080
   telemetry_hz: 2
+  security:
+    api_key: ""                        # або export GCS_API_KEY=secret
+    allow_localhost_without_auth: true # dev: /api без Bearer з 127.0.0.1
+  tls:
+    enabled: false
+    cert_file: config/certs/dev-gcs.crt
+    key_file: config/certs/dev-gcs.key
 
 logging:
   level: INFO

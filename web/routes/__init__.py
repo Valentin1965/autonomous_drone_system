@@ -10,6 +10,10 @@ from web.routes.control_mode import control_bp
 from web.routes.diagnostics import diagnostics_bp
 from web.routes.sim_api import sim_bp
 from web.routes.fleet_api import fleet_bp
+from web.routes.geofence_api import geofence_bp
+from web.routes.field_api import field_bp
+from web.routes.monitoring_api import monitoring_bp
+from web.routes.preflight_api import preflight_bp
 
 
 def register_routes(app: Flask) -> None:
@@ -22,4 +26,8 @@ def register_routes(app: Flask) -> None:
     app.register_blueprint(mission_bp)
     app.register_blueprint(sim_bp)
     app.register_blueprint(fleet_bp)
+    app.register_blueprint(geofence_bp)
+    app.register_blueprint(field_bp)
+    app.register_blueprint(monitoring_bp)
+    app.register_blueprint(preflight_bp)
     app.register_blueprint(pages_bp)

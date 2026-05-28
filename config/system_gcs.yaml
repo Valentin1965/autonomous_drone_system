@@ -12,8 +12,10 @@ vehicle:
 
 mavlink:
   active: px4
-  # Замініть IP на телеметрію / Wi‑Fi робота (QGC має бачити той самий порт)
-  connection_px4: "udp:192.168.1.10:14550"
+  # Розділення каналів варіант 2: GCS — лише radio; RPi — лише USB (див. docs/MAVLINK_VARIANT2.md)
+  link: gcs_radio                      # gcs_radio | rpi_usb | sim
+  connection_gcs: "udp:192.168.1.10:14550"   # SiK / Wi‑Fi телеметрія → Pixhawk
+  connection_px4: "udp:192.168.1.10:14550"   # fallback
   connection_sim: "udp:127.0.0.1:14550"
   heartbeat_timeout: 5
 
@@ -25,6 +27,7 @@ offboard:
 
 mission:
   file: "config/mission.yaml"
+  # Поле: узгоджено з system_rpi.yaml (GPS + телеметрія)
   arrival_radius_m: 2.5
   poll_interval_s: 0.2
   goto_retry_s: 1.5
@@ -36,7 +39,20 @@ web:
   host: "0.0.0.0"
   port: 8080
   telemetry_hz: 2
+  security:
+    api_key: "1995Alex20102"                        # поле: export GCS_API_KEY=...
+    allow_localhost_without_auth: false
+  tls:
+    enabled: false                     # true + cert_file/key_file для HTTPS
+    cert_file: config/certs/gcs.crt
+    key_file: config/certs/gcs.key
 
 logging:
   level: INFO
   log_dir: logs
+
+# CV режим на станції:
+# - local: CV запускається на GCS (кнопка "CV ряд")
+# - onboard: CV працює на RPi; на GCS локальний трекер блокується (щоб не було "2 CV одночасно")
+cv:
+  mode: local   # local | onboard

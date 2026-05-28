@@ -15,6 +15,7 @@ import numpy as np
 import yaml
 
 from cv.depth_row_planner import DepthPlanResult, DepthRowPlanner
+from cv.hazard_detector import HazardDetector
 
 
 class MotionControl(Protocol):
@@ -233,12 +234,17 @@ class YOLOSegmentationTracker:
         self._frame_lock = threading.Lock()
         self._last_jpeg: Optional[bytes] = None
         self._stream_fps = float(self.cfg.get("stream_fps", 8))
+        self._hazard = HazardDetector(self.cfg.get("hazard") or {})
+        self._hazard_stop_active = False
 
         self.source = _resolve_source(
             source or env_source,
             self.cfg,
             self.video_file,
         )
+        if self.source == "synthetic" and self._hazard.enabled:
+            print("[CV] synthetic — hazard YOLO вимкнено (немає реальної сцени)")
+            self._hazard.enabled = False
 
     def set_emergency_check(self, fn) -> None:
         """Callable returning True if motion must stop (e.g. drone_state.emergency_stop)."""
@@ -327,6 +333,14 @@ class YOLOSegmentationTracker:
                 print(f"[CV] Помилка захоплення: {msg}")
                 return {"status": "error", "message": msg}
 
+        hazard_ok = False
+        if self._hazard.enabled:
+            hazard_ok = self._hazard.load(
+                device=self.cfg.get("yolo_device") or os.environ.get("YOLO_DEVICE") or "auto"
+            )
+            if not hazard_ok:
+                print("[CV] Hazard detection вимкнено (модель не завантажена)")
+
         try:
             self._prime_first_frame()
         except Exception as e:
@@ -347,6 +361,7 @@ class YOLOSegmentationTracker:
             "source": self.source,
             "planner": self.planner_mode,
             "yolo": yolo_ok,
+            "hazard": hazard_ok,
             "effective_planner": effective,
         }
 
@@ -499,14 +514,29 @@ class YOLOSegmentationTracker:
             return self._depth_planner.normalize_depth(depth_raw, (h, w))
         return self._depth_planner.pseudo_depth_from_rgb(frame)
 
+    def is_hazard_stop_active(self) -> bool:
+        return bool(self._hazard_stop_active)
+
     def get_public_status(self) -> Dict[str, Any]:
         with self._status_lock:
             nav = self._nav_source
+        hz = self._hazard.last_result()
         return {
             "running": self.running,
             "source": self.source,
             "planner": self.planner_mode,
             "nav_source": nav,
+            "video_file": self.video_file or None,
+            "hazard_stop": self._hazard_stop_active,
+            "hazard_area_ratio": round(hz.area_ratio, 4),
+            "hazard_objects": hz.summary(),
+            "hazard_hits": [
+                {
+                    "class": h.class_name,
+                    "confidence": round(h.confidence, 3),
+                }
+                for h in hz.hits[:8]
+            ],
         }
 
     def _set_nav_source(self, src: str) -> None:
@@ -611,6 +641,11 @@ class YOLOSegmentationTracker:
                         depth_u8, w, self.depth_obstacle_threshold
                     )
 
+                hazard_result = None
+                if self._hazard.ready:
+                    hazard_result = self._hazard.analyze(frame)
+                    self._hazard_stop_active = hazard_result.stop
+
                 if use_yolo:
                     results = self._run_yolo(frame)
                     left_mask, right_mask, obstacle_area = self._parse_yolo_masks(
@@ -622,14 +657,23 @@ class YOLOSegmentationTracker:
                     depth_plan and depth_plan.stopped
                     and depth_plan.obstacle_ratio >= self.depth_obstacle_threshold
                 )
+                hazard_stop = bool(hazard_result and hazard_result.stop)
 
-                if yolo_stop or depth_stop:
+                if hazard_stop or yolo_stop or depth_stop:
                     self._do_stop()
-                    self._set_nav_source("obstacle")
+                    if hazard_stop:
+                        self._set_nav_source("hazard")
+                    else:
+                        self._set_nav_source("obstacle")
                     display = frame.copy()
+                    if hazard_stop and hazard_result:
+                        display = self._hazard.draw(display, hazard_result)
+                        msg = hazard_result.label or "STOP — HAZARD"
+                    else:
+                        msg = "STOP - OBSTACLE!"
                     cv2.putText(
-                        display, "STOP - OBSTACLE!", (50, 70),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 255), 4,
+                        display, msg, (50, 70),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3,
                     )
                     if depth_u8 is not None and depth_plan is not None:
                         display = self._depth_planner.draw_overlay(
@@ -639,6 +683,8 @@ class YOLOSegmentationTracker:
                     if self.show_window:
                         self._show(display)
                     continue
+
+                self._hazard_stop_active = False
 
                 offset = None
                 nav_src = "—"
@@ -675,6 +721,9 @@ class YOLOSegmentationTracker:
                         display = self._overlay(display, left_mask, right_mask, w)
                 else:
                     display = self._overlay(frame, left_mask, right_mask, w)
+
+                if self._hazard.ready:
+                    display = self._hazard.draw(display, hazard_result, draw_roi=True)
 
                 self._publish_jpeg(display)
                 if self.show_window:

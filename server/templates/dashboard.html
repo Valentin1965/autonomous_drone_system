@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fleet Analysis — дашборд</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Fleet Analysis Server</h1>
+    <span class="sub">дашборд · <a href="/">JSON API</a> · <a href="/health">health</a></span>
+  </header>
+
+  <div class="toolbar">
+    <label>API key (Bearer)
+      <input type="password" id="apiKey" class="api-key" placeholder="якщо увімкнено на сервері" autocomplete="off">
+    </label>
+    <label>Станція
+      <input type="text" id="filterStation" placeholder="station_id">
+    </label>
+    <label>Транспорт
+      <input type="text" id="filterVehicle" placeholder="vehicle_id">
+    </label>
+    <label>Культура
+      <input type="text" id="filterCrop" placeholder="vineyard">
+    </label>
+    <label>Тип події
+      <input type="text" id="filterEventType" placeholder="mission_run">
+    </label>
+    <label>Ліміт
+      <input type="number" id="filterLimit" value="100" min="1" max="500">
+    </label>
+    <button type="button" id="btnRefresh">Оновити</button>
+    <label style="flex-direction:row;align-items:center;gap:0.35rem;padding-bottom:0.35rem">
+      <input type="checkbox" id="autoRefresh"> кожні 30 с
+    </label>
+  </div>
+
+  <div id="statusBar" class="status-bar">—</div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="val" id="statEvents">—</div><div class="lbl">Події</div></div>
+    <div class="stat-card"><div class="val" id="statCaptures">—</div><div class="lbl">Знімки</div></div>
+    <div class="stat-card"><div class="val" id="statDetections">—</div><div class="lbl">Детекції</div></div>
+    <div class="stat-card"><div class="val" id="statStations">—</div><div class="lbl">Станцій</div></div>
+    <div class="stat-card"><div class="val" id="statSprayArea">—</div><div class="lbl">Оприск. (га)</div></div>
+    <div class="stat-card"><div class="val" id="statSpraySessions">—</div><div class="lbl">Сесій spray</div></div>
+  </div>
+
+  <main>
+    <section>
+      <h2>Оприскування (spray ↔ моніторинг)</h2>
+      <p class="meta" id="sprayMeta">GET /api/v1/spray/coverage</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Початок</th>
+              <th>Кінець</th>
+              <th>Транспорт</th>
+              <th>Тривалість</th>
+              <th>Трек (м)</th>
+              <th>Площа (м²)</th>
+              <th>га</th>
+              <th>Джерело</th>
+            </tr>
+          </thead>
+          <tbody id="sprayBody">
+            <tr><td colspan="8" class="empty">Завантаження…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section>
+      <h2>Знахідки YOLO</h2>
+      <p class="meta" id="findingsMeta">GET /api/v1/findings</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Час</th>
+              <th>Станція</th>
+              <th>Транспорт</th>
+              <th>Культура</th>
+              <th>Мітка</th>
+              <th>Серйозність</th>
+              <th>Conf.</th>
+              <th>Тип</th>
+              <th>Камера</th>
+              <th>Capture</th>
+              <th>GPS</th>
+            </tr>
+          </thead>
+          <tbody id="findingsBody">
+            <tr><td colspan="11" class="empty">Завантаження…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Журнал операцій</h2>
+      <p class="meta" id="operationsMeta">GET /api/v1/operations</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Час</th>
+              <th>Станція</th>
+              <th>Транспорт</th>
+              <th>Оператор</th>
+              <th>Тип</th>
+              <th>Деталі</th>
+              <th>GPS</th>
+              <th>Payload</th>
+            </tr>
+          </thead>
+          <tbody id="operationsBody">
+            <tr><td colspan="8" class="empty">Завантаження…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

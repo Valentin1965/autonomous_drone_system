@@ -22,8 +22,13 @@ class PixhawkGPSSimulator:
         )
         print(f"Симулятор Pixhawk + GPS запущено на {connection_string}")
 
-        self.lat = float(start_lat) if start_lat is not None else 50.4501
-        self.lon = float(start_lon) if start_lon is not None else 30.5234
+        if start_lat is None or start_lon is None:
+            from config.geo_defaults import DEFAULT_LAT, DEFAULT_LON
+
+            start_lat = start_lat if start_lat is not None else DEFAULT_LAT
+            start_lon = start_lon if start_lon is not None else DEFAULT_LON
+        self.lat = float(start_lat)
+        self.lon = float(start_lon)
         self.alt = 150.0
         self.heading = 90.0
         self.speed = 0.0
@@ -324,11 +329,12 @@ class PixhawkGPSSimulator:
                 arrival_m = 2.5
 
                 if distance <= arrival_m:
+                    # Зупинка біля цілі, але ціль не скидаємо — mission_runner
+                    # вирішує перехід до наступного waypoint і шле новий GOTO.
+                    self.lat = float(self.target_lat)
+                    self.lon = float(self.target_lon)
                     self.target_speed = 0.0
                     self.speed = 0.0
-                    self.target_lat = None
-                    self.target_lon = None
-                    self.guided_active = False
                 else:
                     self.target_heading = bearing
                     self.target_speed = min(2.5, max(0.5, distance / 5))

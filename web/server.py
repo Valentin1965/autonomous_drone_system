@@ -8,9 +8,19 @@ from pathlib import Path
 from flask import Flask
 
 from web.routes import register_routes
+from web.security import register_security
 
 app = Flask(__name__)
 register_routes(app)
+register_security(app)
+
+# Запустити retry-воркер черги офлайн (daemon, безпечний якщо моніторинг вимкнено)
+try:
+    from monitoring.offline_queue import ensure_worker_started
+
+    ensure_worker_started()
+except Exception:
+    pass
 
 
 def _web_bind():

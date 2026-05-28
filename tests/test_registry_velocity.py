@@ -40,6 +40,7 @@ def test_snap_to_start_only_when_default_center():
     assert snap_to_start_waypoint_if_needed(wps) is False
     snap_to(50.47, 30.55)
     assert not is_default_sim_position(get_position())
+    assert snap_to_start_waypoint_if_needed(wps) is True
+    assert abs(get_position()["lat"] - 50.46) < 1e-6
     assert snap_to_start_waypoint_if_needed(wps) is False
-    assert abs(get_position()["lat"] - 50.47) < 1e-6
     sim.running = False

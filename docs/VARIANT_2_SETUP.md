@@ -34,7 +34,7 @@ flowchart LR
 5. **GPS → Pixhawk** (винесення вгору).
 6. **E-stop** на силовому ланцюзі моторів.
 
-> Якщо RPi і GCS одночасно підключаються до FC: використайте **mavlink-router** на RPi або лише radio до GCS, а RPi — USB (рекомендовано).
+> Якщо RPi і GCS одночасно підключаються до FC: використайте **mavlink-router** на RPi або лише radio до GCS, а RPi — USB (рекомендовано). Детально: [`MAVLINK_VARIANT2.md`](MAVLINK_VARIANT2.md).
 
 ---
 
@@ -98,26 +98,25 @@ chmod +x scripts/run_variant2_rpi.sh
 
 Очікується: `[CV] Oak-D RGB + depth`, рух по ряду через MAVLink.
 
-**Автозапуск (systemd)** — шаблон:
+**Автозапуск (systemd)**:
 
-```ini
-# /etc/systemd/system/rover-cv.service
-[Unit]
-Description=Rover CV variant 2
-After=network.target
+Є готові файли в репозиторії:
 
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=/home/pi/autonomous_drone_system
-Environment=SYSTEM_CONFIG=config/system_rpi.yaml
-Environment=CV_CONFIG=config/cv_rpi.yaml
-Environment=MAVLINK_PROFILE=px4
-ExecStart=/home/pi/autonomous_drone_system/.venv/bin/python main.py --cv
-Restart=on-failure
+- `deploy/rover-cv.service`
+- `deploy/rover-cv.env.example`
 
-[Install]
-WantedBy=multi-user.target
+Інсталяція на RPi:
+
+```bash
+sudo mkdir -p /etc/rover
+sudo cp deploy/rover-cv.env.example /etc/rover/rover-cv.env
+sudo cp deploy/rover-cv.service /etc/systemd/system/rover-cv.service
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now rover-cv.service
+
+# логи
+sudo journalctl -u rover-cv -f
 ```
 
 ### C. Станція (GCS)
@@ -126,13 +125,52 @@ WantedBy=multi-user.target
 # у config/system_gcs.yaml → connection_px4: udp:<IP_робота>:14550
 chmod +x scripts/run_variant2_gcs.sh
 ./scripts/run_variant2_gcs.sh
+# за замовч. MONITORING_CONFIG=config/monitoring.field.yaml (uplink.source: rpi)
 ```
+
+**Польовий старт (менше помилок перед виїздом):**
+
+```bash
+chmod +x scripts/start_field.sh
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 DRONE_SIM_INTERACTIVE=0 bash scripts/start_field.sh
+```
+
+Скрипт робить:
+
+- health-check analysis server (якщо `remote.base_url` заданий)
+- показує стан офлайн-черги (pending events/captures)
+- стартує GCS (`python main.py --web`)
+
+**Режим “CV на борту (RPi)” для GCS:**
+
+У `config/system_gcs.yaml`:
+
+```yaml
+cv:
+  mode: onboard   # local | onboard
+```
+
+У цьому режимі локальний трекер на GCS **заблоковано** (щоб не запускати 2 CV одночасно).
 
 Браузер: **http://127.0.0.1:8080/**
 
-1. Режим **Автономний** → точки на карті → **Старт маршруту**.
-2. Або **Ручний** → стрілки; **STOP** / **■ Стоп** зупиняють усе.
-3. **CV ряд** на станції — лише якщо CV не на RPi (для вар. 2 зазвичай CV на борту, на GCS лише моніторинг за потреби).
+1. У блоці **Моніторинг** вкажіть **Станція** (id) і **Оператор** → **Зберегти** (йдуть на сервер аналізу).
+2. Режим **Автономний** → точки на карті → **Старт маршруту**.
+3. Або **Ручний** → стрілки; **STOP** / **■ Стоп** зупиняють усе.
+4. **CV ряд** на станції — лише якщо CV не на RPi (для вар. 2 зазвичай CV на борту).
+
+**Моніторинг з RPi (Wi‑Fi):** RPi надсилає JPEG на станцію:
+
+```bash
+# на RPi (після зйомки лівої/правої камери моніторингу):
+python scripts/rpi_monitoring_upload.py \
+  --gcs http://192.168.1.50:8080 \
+  --vehicle rover_1 --side left --image /tmp/left.jpg
+```
+
+На GCS: **Зразок зараз** / **Обстеження** чекають пару left+right (`wait_timeout_s` у `monitoring.field.yaml`).
+
+**Радіус прибуття:** `arrival_radius_m: 2.5` у `system_gcs.yaml` і `system_rpi.yaml` (однаково); dev/sim — `1.0` у `config/system.yaml`.
 
 ### D. Перевірки перед рядом
 

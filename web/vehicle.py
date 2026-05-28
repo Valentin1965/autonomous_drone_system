@@ -18,17 +18,28 @@ class Vehicle:
         mavlink_connection: str,
         color: str = "#ff9800",
         sim_bind: Optional[str] = None,
-        start_lat: float = 50.4501,
-        start_lon: float = 30.5234,
+        start_lat: Optional[float] = None,
+        start_lon: Optional[float] = None,
+        video_file: Optional[str] = None,
+        active: bool = True,
     ):
         self.id = vehicle_id
         self.name = name
         self.mavlink_connection = mavlink_connection
         self.color = color
         self.sim_bind = sim_bind
+        if start_lat is None or start_lon is None:
+            from config.geo_defaults import DEFAULT_LAT, DEFAULT_LON
+
+            start_lat = start_lat if start_lat is not None else DEFAULT_LAT
+            start_lon = start_lon if start_lon is not None else DEFAULT_LON
         self.start_lat = start_lat
         self.start_lon = start_lon
+        self.video_file = (video_file or "").strip() or None
+        self.active = bool(active)
         self.mission_waypoints: List[Dict[str, float]] = []
+        self.mission_draft: Optional[Dict[str, Any]] = None
+        self.mission_route_committed: bool = False
         from web.mission_record import default_record
 
         self.mission_record: Dict[str, Any] = default_record()
@@ -39,6 +50,60 @@ class Vehicle:
         from web.mission_runner import MissionRunner
 
         self.mission_runner = MissionRunner(self)
+
+    def set_mission_draft(
+        self,
+        waypoints: List[dict],
+        *,
+        planning: Optional[dict] = None,
+        segments: Optional[list] = None,
+    ) -> None:
+        from web.mission_route import normalize_route_wp
+
+        self.mission_draft = {
+            "waypoints": [normalize_route_wp(w) for w in waypoints if w.get("lat") is not None],
+            "planning": planning,
+            "segments": segments,
+        }
+        self.mission_route_committed = False
+
+    def clear_mission_draft(self) -> None:
+        self.mission_draft = None
+
+    def get_execution_waypoints(self) -> List[Dict[str, Any]]:
+        """Точки для польоту: чернетка до фіксації, інакше збережений маршрут."""
+        if self.mission_draft and not self.mission_route_committed:
+            return list(self.mission_draft.get("waypoints") or [])
+        return list(self.mission_waypoints)
+
+    def commit_route_with_actual(
+        self,
+        planned_waypoints: List[dict],
+        actual_by_index: Dict[int, dict],
+    ) -> List[Dict[str, float]]:
+        """Запис на сервер: реальні GPS де є, решта — з плану."""
+        from web.mission_route import normalize_nav_wp, normalize_route_wp
+
+        committed: List[Dict[str, Any]] = []
+        for i, wp in enumerate(planned_waypoints):
+            if i in actual_by_index:
+                base = normalize_nav_wp(actual_by_index[i])
+            else:
+                base = normalize_nav_wp(wp)
+            if wp.get("role") is not None:
+                base["role"] = wp.get("role")
+            if wp.get("row_index") is not None:
+                base["row_index"] = wp.get("row_index")
+            committed.append(base)
+        self.mission_waypoints = [
+            {"lat": w["lat"], "lon": w["lon"]} for w in committed
+        ]
+        self.mission_route_committed = True
+        planning = (self.mission_draft or {}).get("planning")
+        if planning and isinstance(self.mission_record, dict):
+            self.mission_record["route_planning"] = planning
+        self.mission_draft = None
+        return list(self.mission_waypoints)
 
     def reset_controller(self) -> None:
         """Скинути MAVLink-клієнт (після зміни порту / складу флоту)."""
@@ -103,6 +168,12 @@ class Vehicle:
                 st["connected"] = False
                 st["link_error"] = str(e)
         mr = self.mission_runner.status()
+        try:
+            from web.tracker_service import fleet_cv_status
+
+            cv_st = fleet_cv_status(self.id)
+        except Exception:
+            cv_st = {"connected": False, "video_file": self.video_file}
         return {
             "id": self.id,
             "name": self.name,
@@ -114,6 +185,13 @@ class Vehicle:
             "gps": st.get("gps") or {},
             "heartbeat_age_s": st.get("heartbeat_age_s"),
             "mission": mr,
-            "waypoint_count": len(self.mission_waypoints),
+            "waypoint_count": len(self.get_execution_waypoints()),
+            "route_committed": self.mission_route_committed,
+            "has_route_draft": bool(
+                self.mission_draft and not self.mission_route_committed
+            ),
             "sprayer_active": self.sprayer_active,
+            "video_file": self.video_file,
+            "cv": cv_st,
+            "active": self.active,
         }

@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import threading
 import time
+from typing import Optional
 
 
 def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -23,7 +24,12 @@ def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 class SimStub:
     """Мінімальний rover для тестів API / mission_runner."""
 
-    def __init__(self, lat: float = 50.4501, lon: float = 30.5234):
+    def __init__(self, lat: Optional[float] = None, lon: Optional[float] = None):
+        if lat is None or lon is None:
+            from config.geo_defaults import DEFAULT_LAT, DEFAULT_LON
+
+            lat = lat if lat is not None else DEFAULT_LAT
+            lon = lon if lon is not None else DEFAULT_LON
         self.lat = float(lat)
         self.lon = float(lon)
         self.heading = 90.0
@@ -50,9 +56,7 @@ class SimStub:
                 self.lat = self.target_lat
                 self.lon = self.target_lon
                 self.speed = 0.0
-                self.guided_active = False
-                self.target_lat = None
-                self.target_lon = None
+                self.target_speed = 0.0
                 return
             step = min(self.step_m, dist * 0.9)
             fraction = step / dist

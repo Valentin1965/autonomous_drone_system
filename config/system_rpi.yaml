@@ -12,10 +12,12 @@ vehicle:
 
 mavlink:
   active: px4
-  # RPi → Pixhawk по USB (перевірте: ls /dev/ttyACM* /dev/serial/by-id/)
+  link: rpi_usb                        # лише USB до FC; не використовувати radio GCS
+  connection_rpi: "serial:/dev/ttyACM0:115200"
   connection_px4: "serial:/dev/ttyACM0:115200"
   connection_sim: "udp:127.0.0.1:14550"
   heartbeat_timeout: 5
+  # Не відкривати udp:14550 на RPi якщо GCS уже на radio (див. mavlink-router)
 
 # На RPi симулятор не використовується
 simulator:
@@ -26,6 +28,7 @@ offboard:
 
 mission:
   file: "config/mission.yaml"
+  # Поле: узгоджено з system_gcs.yaml (той самий MissionRunner на станції)
   arrival_radius_m: 2.5
   poll_interval_s: 0.2
   goto_retry_s: 1.5

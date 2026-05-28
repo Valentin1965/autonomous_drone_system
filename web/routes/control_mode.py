@@ -75,11 +75,11 @@ def set_autonomous_mode():
     except KeyError as e:
         return jsonify({"error": str(e)}), 404
     try:
-        ctrl = v.get_controller()
-        ctrl.stop()
         from simulator import fleet_registry
 
         if not v.mission_runner.active:
+            ctrl = v.get_controller()
+            ctrl.stop()
             fleet_registry.halt_motion(v.id)
         v.set_control_mode("autonomous")
         st = v.mission_runner.status()

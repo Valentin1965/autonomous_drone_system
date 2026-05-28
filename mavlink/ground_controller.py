@@ -60,6 +60,25 @@ class GroundController:
         self._heartbeat_timeout = heartbeat_timeout
 
     def ensure_connected(self) -> None:
+        """Підключення MAVLink; для in-process симулятора UDP необовʼязковий."""
+        if self._fleet_sim() is not None:
+            with self._lock:
+                if self._connected:
+                    return
+                try:
+                    self.conn.connect()
+                except Exception as e:
+                    if self.logger:
+                        self.logger.warning(
+                            "MAVLink UDP (sim, optional) [%s]: %s",
+                            self.vehicle_id,
+                            e,
+                        )
+                self._connected = True
+                self._last_fc_heartbeat = time.time()
+                self._start_telemetry_thread()
+            return
+
         with self._lock:
             if self._connected:
                 return
@@ -350,9 +369,17 @@ class GroundController:
                     }
             elif connected and gps.get("lat") is not None:
                 gps_source = "mavlink"
+            armed = self._armed
+            sim = fleet_registry.get_sim(self.vehicle_id)
+            if sim is not None:
+                try:
+                    with sim.lock:
+                        armed = bool(sim.armed)
+                except AttributeError:
+                    armed = bool(getattr(sim, "armed", armed))
             return {
                 "connected": connected,
-                "armed": self._armed,
+                "armed": armed,
                 "frame": self._frame,
                 "connection": self.connection_string,
                 "vehicle_id": self.vehicle_id,

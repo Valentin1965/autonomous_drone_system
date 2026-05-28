@@ -13,6 +13,13 @@ default_model: yolov8s-seg.pt
 confidence: 0.45
 yolo_device: auto
 
+hazard:
+  enabled: true
+  model: yolov8s.pt
+  confidence: 0.40
+  stop_area_ratio: 0.05
+  classes: [person, dog, cat, bird, horse, cow, sheep, bicycle, car, motorcycle]
+
 depth:
   near_far_ratio: 0.55
   min_window_area: 2500

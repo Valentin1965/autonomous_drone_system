@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import threading
 import time
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Any
 
 from web.fleet import get_fleet
 from web.state import logger
@@ -60,6 +60,24 @@ def _halt_vehicle_motion(vehicle: "Vehicle", ctrl) -> None:
         pass
 
 
+def _complete_at_last(
+    runner: "MissionRunner",
+    ctrl,
+    wp: Dict[str, float],
+    vid: str,
+) -> None:
+    """Зупинка на останній точці — без повторних GOTO до геозони/переліту."""
+    from simulator import fleet_registry
+
+    fleet_registry.snap_to(wp["lat"], wp["lon"], vid)
+    fleet_registry.halt_motion(vid)
+    _halt_vehicle_motion(runner.vehicle, ctrl)
+    runner._stop.set()
+    with runner._lock:
+        runner.index = max(0, len(runner._waypoints) - 1)
+    runner._set_phase("at_last")
+
+
 class MissionRunner:
     def __init__(self, vehicle: "Vehicle"):
         self.vehicle = vehicle
@@ -73,6 +91,8 @@ class MissionRunner:
         self.speed_m_s = 1.0
         self.arrival_m = 2.5
         self._paused_return = False
+        self._actual_by_index: Dict[int, Dict[str, float]] = {}
+        self._route_committed_this_run = False
 
     @property
     def active(self) -> bool:
@@ -89,6 +109,7 @@ class MissionRunner:
                 "can_return": self.phase == "at_last",
                 "can_resume": self.phase == "paused",
                 "vehicle_id": self.vehicle.id,
+                "route_committed": bool(self.vehicle.mission_route_committed),
             }
         pos = _current_gps(self.vehicle, None)
         if _gps_valid(pos):
@@ -110,6 +131,8 @@ class MissionRunner:
         self._load_cfg()
         self.speed_m_s = max(0.1, float(speed_m_s))
         self._waypoints = list(waypoints)
+        self._actual_by_index = {}
+        self._route_committed_this_run = bool(self.vehicle.mission_route_committed)
 
         with self._lock:
             self.phase = "running"
@@ -163,6 +186,18 @@ class MissionRunner:
     def _load_cfg(self) -> None:
         cfg = get_fleet().load_config().get("mission", {})
         self.arrival_m = float(cfg.get("arrival_radius_m", 2.5))
+
+    def _effective_arrival_m(self) -> float:
+        """Симулятор зупиняється в ~2.5 м — місія не повинна чекати менший радіус."""
+        m = self.arrival_m
+        try:
+            from simulator import fleet_registry
+
+            if fleet_registry.get_sim(self.vehicle.id) is not None:
+                m = max(m, 2.5)
+        except Exception:
+            pass
+        return m
 
     def update_route_waypoints(self, waypoints: List[Dict[str, float]]) -> None:
         with self._lock:
@@ -258,6 +293,9 @@ class MissionRunner:
             ctrl.ensure_connected()
             _halt_vehicle_motion(self.vehicle, ctrl)
             fleet_registry.snap_to(waypoints[0]["lat"], waypoints[0]["lon"], vid)
+            gps0 = _current_gps(self.vehicle, ctrl)
+            if _gps_valid(gps0):
+                self._record_actual_at(0, gps0, waypoints)
 
             if len(waypoints) == 1:
                 ctrl.arm()
@@ -337,6 +375,16 @@ class MissionRunner:
                 _halt_vehicle_motion(self.vehicle, ctrl)
                 return
 
+            try:
+                from web.tracker_service import hazard_blocks_motion
+
+                if hazard_blocks_motion(self.vehicle.id):
+                    _halt_vehicle_motion(self.vehicle, ctrl)
+                    time.sleep(poll)
+                    continue
+            except Exception:
+                pass
+
             with self._lock:
                 idx = self.index
 
@@ -350,21 +398,35 @@ class MissionRunner:
                 time.sleep(poll)
                 continue
 
+            from web import geofence
+
+            if geofence.is_enabled():
+                ok, _msg = geofence.check_position(
+                    float(gps["lat"]), float(gps["lon"])
+                )
+                if not ok:
+                    logger.warning(
+                        "geofence breach [%s] at %.6f, %.6f",
+                        vid,
+                        float(gps["lat"]),
+                        float(gps["lon"]),
+                    )
+                    self._set_phase("aborted")
+                    _halt_vehicle_motion(self.vehicle, ctrl)
+                    return
+
             dist = _haversine_m(
                 float(gps["lat"]), float(gps["lon"]),
                 wp["lat"], wp["lon"],
             )
+            arrive_m = self._effective_arrival_m()
 
-            if dist <= self.arrival_m:
+            if dist <= arrive_m:
+                self._record_actual_at(idx, gps, waypoints)
                 next_idx = idx + 1
 
                 if not is_return and next_idx >= n:
-                    fleet_registry.snap_to(wp["lat"], wp["lon"], vid)
-                    with self._lock:
-                        self.index = len(self._waypoints) - 1
-                    _halt_vehicle_motion(self.vehicle, ctrl)
-                    self._stop.set()
-                    self._set_phase("at_last")
+                    _complete_at_last(self, ctrl, wp, vid)
                     return
 
                 if is_return and next_idx >= n:
@@ -381,9 +443,48 @@ class MissionRunner:
                     self.index = next_idx
                 self._goto(ctrl, waypoints[next_idx])
             elif time.time() - getattr(self, "_last_goto", 0) > goto_interval:
+                # Повторний GOTO (у т.ч. на останній точці), якщо ще не в arrive_m
                 self._goto(ctrl, wp)
 
             time.sleep(poll)
+
+    def _record_actual_at(
+        self,
+        index: int,
+        gps: dict,
+        waypoints: List[Dict[str, Any]],
+    ) -> None:
+        from web.mission_route import is_first_row_end_index
+
+        self._actual_by_index[index] = {
+            "lat": float(gps["lat"]),
+            "lon": float(gps["lon"]),
+        }
+        if self._route_committed_this_run:
+            return
+        if not is_first_row_end_index(index, waypoints):
+            return
+        try:
+            committed = self.vehicle.commit_route_with_actual(
+                waypoints, self._actual_by_index
+            )
+            self._route_committed_this_run = True
+            self._waypoints = list(committed)
+            logger.info(
+                "mission route committed from actual GPS [%s] after first row (%d points)",
+                self.vehicle.id,
+                len(committed),
+            )
+            from web.session_log import record
+
+            record(
+                "mission_route_committed",
+                f"{self.vehicle.id}:{len(committed)}wp",
+            )
+        except Exception as exc:
+            logger.exception(
+                "mission route commit failed [%s]: %s", self.vehicle.id, exc
+            )
 
     def _goto(self, ctrl, wp: Dict[str, float]) -> None:
         with self._lock:

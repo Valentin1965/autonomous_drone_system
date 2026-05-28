@@ -41,8 +41,10 @@ def test_velocity_setpoint_activates_guided(sim):
 
 def test_update_position_moves_lon_at_heading_90(sim):
     sim.armed = True
-    sim.heading = 90.0
+    sim.guided_active = True
+    sim.target_speed = 1.0
     sim.speed = 1.0
+    sim.heading = 90.0
     lon_before = sim.lon
     sim.update_position(dt=1.0)
     assert sim.lon > lon_before
@@ -59,6 +61,8 @@ def test_arm_command_long(sim):
 
 def test_sim_exposes_position(sim):
     sim.armed = True
+    sim.guided_active = True
+    sim.target_speed = 1.0
     sim.speed = 1.0
     sim.heading = 90.0
     lon0 = sim.lon

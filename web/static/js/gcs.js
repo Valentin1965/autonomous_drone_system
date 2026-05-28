@@ -2,16 +2,32 @@
  * GCS — супутник, відео-overlay, waypoints
  */
 (function () {
-  const DEFAULT_CENTER = [50.4501, 30.5234];
+  /** Тенерифе (Канарські острови) — стартова карта GCS */
+  const DEFAULT_CENTER = [28.2916, -16.6291];
+  const DEFAULT_MAP_ZOOM = 11;
   const LS_SPEED = "gcs_mission_speed_m_s";
   const LS_MISSION = "gcs_mission_backup_v2";
+  const LS_API_KEY = "gcs_api_key";
+
+  function authHeaders(extra) {
+    const h = { ...(extra || {}) };
+    const key = sessionStorage.getItem(LS_API_KEY) || "";
+    if (key) h.Authorization = `Bearer ${key}`;
+    return h;
+  }
+
+  async function gcsFetch(url, opts) {
+    const o = opts || {};
+    o.headers = authHeaders(o.headers);
+    return fetch(url, o);
+  }
   /** Координати з config/demo_mission.json — зняти залишки після старого DEMO. */
   const DEMO_ROUTE_WPS = [
-    [50.4501, 30.5234],
-    [50.45055, 30.52395],
-    [50.451, 30.5245],
-    [50.45145, 30.52505],
-    [50.4519, 30.5256],
+    [28.2916, -16.6291],
+    [28.29205, -16.62855],
+    [28.2925, -16.6280],
+    [28.29295, -16.62745],
+    [28.2934, -16.6269],
   ];
   const LS_CV_W = "gcs_cv_width";
   const LS_CV_VIDEO_H = "gcs_cv_video_h";
@@ -21,10 +37,32 @@
 
   let map, roverMarker, trailLine, missionLayer, missionRoute, fleetRoutesLayer, vehicleLayer;
   let baseLayer, satLayer;
+  let geofenceLayer = null;
+  let geofencePreviewLayer = null;
+  let geofenceDrawMode = false;
+  let geofenceCornerA = null;
+  let geofenceCornerMarker = null;
+  // Field boundary (polygon) — for planning rows in complex fields
+  let fieldDrawMode = false;
+  let fieldPoints = [];
+  let fieldLayer = null;
+  let fieldPreviewLine = null;
+  let fieldActiveId = null;
+  let fieldNewMode = false;
+  let preflightReadyMission = false;
+  let preflightReadyCv = false;
+  let preflightBlockReason = "";
+  let monitoringBlockReason = "";
+  let lastPreflightPayload = null;
+  let monitoringCrop = "vineyard";
+  let monitoringFindingsLayer = null;
+  const monitoringMarkers = {};
   const trail = [];
   let waypoints = [];
   /** Маршрути всіх дронів: vehicle_id → [{lat, lon}, …] */
   const fleetRoutes = {};
+  /** vehicle_id → маршрут уже зафіксовано на сервері (реальні GPS) */
+  const fleetRouteCommitted = {};
   const fleetRoutePolylines = {};
   let wpMarkers = [];
   let sprayer = false;
@@ -59,8 +97,8 @@
     field_notes: "",
   };
 
-  const DEFAULT_SIM_LAT = 50.4501;
-  const DEFAULT_SIM_LON = 30.5234;
+  const DEFAULT_SIM_LAT = 28.2916;
+  const DEFAULT_SIM_LON = -16.6291;
 
   const el = (id) => document.getElementById(id);
 
@@ -150,13 +188,72 @@
     });
   }
 
-  async function fetchMissionWaypoints(vid) {
+  async function fetchMissionPayload(vid) {
     const r = await fetch(withVehicle("/api/mission", vid));
-    const d = await r.json();
-    return d.waypoints || [];
+    return r.json();
   }
 
-  async function refreshAllFleetMissions() {
+  function waypointsFromMissionPayload(d) {
+    fleetRouteCommitted[d.vehicle_id || selectedVehicleId] = !!d.route_committed;
+    if (
+      d.draft &&
+      d.draft.waypoints &&
+      d.draft.waypoints.length &&
+      !d.route_committed
+    ) {
+      return d.draft.waypoints.map((w) => ({ ...w }));
+    }
+    return (d.waypoints || []).map((w) => ({ lat: w.lat, lon: w.lon }));
+  }
+
+  async function fetchMissionWaypoints(vid) {
+    const d = await fetchMissionPayload(vid);
+    return waypointsFromMissionPayload(d);
+  }
+
+  function missionBlocksRouteSync(m) {
+    if (!m) return false;
+    const ph = m.phase || "idle";
+    return (
+      !!m.active ||
+      ph === "running" ||
+      ph === "returning" ||
+      ph === "paused"
+    );
+  }
+
+  function fleetHasActiveMission(fleet) {
+    const vehicles = (fleet && fleet.vehicles) || fleetVehicles || [];
+    return vehicles.some((fv) => missionBlocksRouteSync(fv.mission));
+  }
+
+  async function fetchFleetFromServer() {
+    try {
+      const d = await apiGet("/api/fleet");
+      fleetVehicles = d.vehicles || fleetVehicles;
+      if (d.selected_vehicle_id) selectedVehicleId = d.selected_vehicle_id;
+      return d;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function fleetHasActiveMissionOnServer() {
+    const fleet = await fetchFleetFromServer();
+    if (fleet && fleetHasActiveMission(fleet)) return true;
+    const ids = allFleetIdsWithRoutes();
+    for (const vid of ids) {
+      try {
+        const st = await apiGet(
+          `/api/mission/status?vehicle_id=${encodeURIComponent(vid)}`
+        );
+        if (missionBlocksRouteSync(st)) return true;
+      } catch (_) { /* ignore */ }
+    }
+    return false;
+  }
+
+  async function refreshFleetMissionCaches() {
     syncWaypointsToCache();
     const ids = fleetVehicleIds();
     await Promise.all(
@@ -171,7 +268,11 @@
     );
     waypoints = fleetRoutes[selectedVehicleId] || waypoints;
     renderMission();
-    await syncAllFleetRouteStarts();
+  }
+
+  /** Оновити кеш маршрутів флоту (без зміни позицій дронів на карті/симі). */
+  async function refreshAllFleetMissions() {
+    await refreshFleetMissionCaches();
   }
 
   function log(msg, isErr) {
@@ -187,6 +288,12 @@
       const o = JSON.parse(raw);
       if (o.error === "empty mission") {
         return "Маршрут порожній: увімкніть «Редагувати: ВКЛ» і клікніть на карті";
+      }
+      if (o.error === "preflight_failed") {
+        return o.message || "Перевірте «Перед виїздом» (MAVLink, GPS, ARM)";
+      }
+      if (o.error === "not_autonomous") {
+        return o.message || "Увімкніть «Автономний»";
       }
       return o.message || o.error || raw;
     } catch (_) {
@@ -209,18 +316,26 @@
       opts.body = JSON.stringify(payload);
     }
     const useVehicleQuery = !noVehicle && !vehicleId;
-    const r = await fetch(useVehicleQuery ? withVehicle(url) : url, opts);
+    const r = await gcsFetch(useVehicleQuery ? withVehicle(url) : url, opts);
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(JSON.stringify(data));
     return data;
   }
 
-  async function apiPut(url, body) {
-    const r = await fetch(withVehicle(url), {
+  async function apiPut(url, body, optsExtra) {
+    const vehicleId = (optsExtra && optsExtra.vehicleId) || selectedVehicleId;
+    const r = await gcsFetch(withVehicle(url, vehicleId), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...body, vehicle_id: selectedVehicleId }),
+      body: JSON.stringify({ ...body, vehicle_id: vehicleId }),
     });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(JSON.stringify(data));
+    return data;
+  }
+
+  async function apiGet(url) {
+    const r = await gcsFetch(url);
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(JSON.stringify(data));
     return data;
@@ -415,9 +530,21 @@
   async function syncVehicleRouteStart(vid) {
     const wps = fleetRoutes[vid] || (vid === selectedVehicleId ? waypoints : []);
     if (!wps.length) return;
+    // Статус місії з сервера — кеш fleetVehicles може бути застарілим після старту іншого дрона.
+    try {
+      const st = await apiGet(
+        `/api/mission/status?vehicle_id=${encodeURIComponent(vid)}`
+      );
+      if (missionBlocksRouteSync(st)) return;
+    } catch (_) {
+      try {
+        const fv = fleetVehicles.find((x) => x.id === vid);
+        if (missionBlocksRouteSync(fv && fv.mission)) return;
+      } catch (_e) { /* ignore */ }
+    }
     try {
       await apiPost("/api/mission/sync_start", {}, { vehicleId: vid });
-    } catch (_) { /* sim offline */ }
+    } catch (_) { /* mission_active / sim offline */ }
   }
 
   async function syncAllFleetRouteStarts() {
@@ -471,7 +598,10 @@
   }
 
   function initMap() {
-    map = L.map("map", { zoomControl: true }).setView(DEFAULT_CENTER, 17);
+    map = L.map("map", { zoomControl: true }).setView(
+      DEFAULT_CENTER,
+      DEFAULT_MAP_ZOOM
+    );
 
     baseLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -747,12 +877,15 @@
     }
   }
 
+  /**
+   * Завантажити маршрут обраного дрона для UI.
+   * Не викликає sync_start — інші дрони продовжують місії під час перемикання.
+   */
   async function loadMission() {
     try {
-      const r = await fetch(withVehicle("/api/mission"));
-      const d = await r.json();
-      waypoints = d.waypoints || [];
-      fleetRoutes[selectedVehicleId] = waypoints;
+      const d = await fetchMissionPayload();
+      waypoints = waypointsFromMissionPayload(d);
+      fleetRoutes[selectedVehicleId] = waypoints.map((w) => ({ ...w }));
       if (d.record) applyMissionRecordToForm(d.record);
       if (isLegacyDemoRoute(waypoints)) {
         await clearMissionRoute();
@@ -760,24 +893,29 @@
         return;
       }
       if (fleetVehicles.length > 1) {
-        await refreshAllFleetMissions();
+        await refreshFleetMissionCaches();
       } else {
         renderMission();
       }
-      if (waypoints.length > 0) {
-        await syncAllFleetRouteStarts();
-        clearMovementTrail();
-        focusMapOnSelected();
-        focusStartWaypoint(false);
-      } else {
-        await syncAllFleetRouteStarts();
-        clearMovementTrail();
-        focusMapOnSelected();
-      }
+      clearMovementTrail();
+      focusMapOnSelected();
     } catch (e) { /* ignore */ }
   }
 
   async function onMapClick(e) {
+    if (fieldDrawMode) {
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+      fieldPoints.push({ lat, lon });
+      renderFieldPreviewLine();
+      const btnClr = el("btnFieldClear");
+      if (btnClr) btnClr.disabled = fieldPoints.length < 3;
+      return;
+    }
+    if (geofenceDrawMode) {
+      handleGeofenceMapClick(e);
+      return;
+    }
     if (!isAutonomousMode()) {
       log("Точки на карті — лише в «Автономному» режимі", true);
       return;
@@ -870,6 +1008,265 @@
     if (!li) return;
     li.classList.toggle("ok", !!ok);
     li.dataset.ok = ok ? "1" : "0";
+  }
+
+  function syncPreflightFromStatus(s) {
+    const pf = (s && s.preflight) || {};
+    const c = pf.checks || {};
+    if (c.mavlink) setPreflightItem("pfMavlink", c.mavlink.ok);
+    if (c.gps) setPreflightItem("pfGps", c.gps.ok);
+    if (c.armed) setPreflightItem("pfArm", c.armed.ok);
+    if (c.emergency_clear) setPreflightItem("pfEmergency", c.emergency_clear.ok);
+    if (c.route) setPreflightItem("pfRoute", c.route.ok);
+    if (c.geofence) {
+      setPreflightItem("pfGeofence", c.geofence.ok);
+    } else {
+      const geoPos = c.geofence_position ? c.geofence_position.ok : true;
+      const geoRoute = c.geofence_route ? c.geofence_route.ok : true;
+      setPreflightItem("pfGeofence", geoPos && geoRoute);
+    }
+    updateGeofenceHint(s.geofence);
+    lastPreflightPayload = pf;
+    preflightReadyMission = !!pf.ready_for_mission;
+    preflightReadyCv = !!pf.ready_for_cv;
+    preflightBlockReason = pf.block_reason || "";
+    syncMonitoringPreflight(pf);
+    const pfBanner = el("preflightBanner");
+    if (pfBanner) {
+      if (!preflightReadyMission && preflightBlockReason) {
+        pfBanner.textContent = preflightBlockReason;
+        pfBanner.classList.remove("hidden");
+      } else {
+        pfBanner.classList.add("hidden");
+        pfBanner.textContent = "";
+      }
+    }
+    const resetBtn = el("btnEmergencyReset");
+    if (resetBtn) {
+      resetBtn.classList.toggle("hidden", !s.emergency_stop);
+    }
+    if (s.geofence) renderGeofence(s.geofence);
+  }
+
+  function updateGeofenceHint(gf) {
+    const hint = el("geofenceHint");
+    if (!hint) return;
+    if (!gf || !gf.enabled) {
+      hint.textContent =
+        "Геозона не задана (опційно). Для поля: «2 кути на карті» або «За маршрутом».";
+      return;
+    }
+    hint.textContent =
+      `Активна: lat ${gf.min_lat.toFixed(5)}…${gf.max_lat.toFixed(5)}, ` +
+      `lon ${gf.min_lon.toFixed(5)}…${gf.max_lon.toFixed(5)}`;
+  }
+
+  function renderGeofence(gf) {
+    if (!map) return;
+    if (geofencePreviewLayer) {
+      map.removeLayer(geofencePreviewLayer);
+      geofencePreviewLayer = null;
+    }
+    if (!gf || !gf.enabled) {
+      if (geofenceLayer) {
+        map.removeLayer(geofenceLayer);
+        geofenceLayer = null;
+      }
+      return;
+    }
+    const southWest = [gf.min_lat, gf.min_lon];
+    const northEast = [gf.max_lat, gf.max_lon];
+    if (!geofenceLayer) {
+      geofenceLayer = L.rectangle([southWest, northEast], {
+        color: "#29b6f6",
+        weight: 2,
+        fillColor: "#29b6f6",
+        fillOpacity: 0.07,
+        dashArray: "8 6",
+        interactive: false,
+      });
+      geofenceLayer.addTo(map);
+    } else {
+      geofenceLayer.setBounds([southWest, northEast]);
+    }
+  }
+
+  function setGeofenceDrawMode(on) {
+    geofenceDrawMode = !!on;
+    const btn = el("btnGeofenceDraw");
+    if (btn) btn.classList.toggle("active", geofenceDrawMode);
+    if (!geofenceDrawMode) {
+      geofenceCornerA = null;
+      if (geofenceCornerMarker && map) {
+        map.removeLayer(geofenceCornerMarker);
+        geofenceCornerMarker = null;
+      }
+      const mh = el("mapHint");
+      if (mh) mh.textContent = "▲ rover · редагування: клік = додати · перетягнути = змістити · ✕ = зняти";
+    } else {
+      log("Геозона: клік 1 — перший кут, клік 2 — протилежний кут");
+      const mh = el("mapHint");
+      if (mh) mh.textContent = "ГЕОЗОНА: клік 1 і 2 — протилежні кути прямокутника";
+    }
+  }
+
+  async function saveGeofenceBounds(minLat, maxLat, minLon, maxLon) {
+    const r = await fetch("/api/geofence", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        enabled: true,
+        min_lat: minLat,
+        max_lat: maxLat,
+        min_lon: minLon,
+        max_lon: maxLon,
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || d.error || r.status);
+    renderGeofence(d);
+    updateGeofenceHint(d);
+    log("Геозону збережено");
+    pollStatus();
+    return d;
+  }
+
+  async function loadGeofenceConfig() {
+    try {
+      const r = await fetch("/api/geofence");
+      const gf = await r.json();
+      if (r.ok) {
+        renderGeofence(gf);
+        updateGeofenceHint(gf);
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  function handleGeofenceMapClick(e) {
+    const lat = e.latlng.lat;
+    const lon = e.latlng.lng;
+    if (!geofenceCornerA) {
+      geofenceCornerA = { lat, lon };
+      if (geofenceCornerMarker && map) map.removeLayer(geofenceCornerMarker);
+      geofenceCornerMarker = L.circleMarker([lat, lon], {
+        radius: 8,
+        color: "#29b6f6",
+        fillColor: "#29b6f6",
+        fillOpacity: 0.8,
+      }).addTo(map);
+      log("Геозона: клік 2 — протилежний кут");
+      return;
+    }
+    const a = geofenceCornerA;
+    const minLat = Math.min(a.lat, lat);
+    const maxLat = Math.max(a.lat, lat);
+    const minLon = Math.min(a.lon, lon);
+    const maxLon = Math.max(a.lon, lon);
+    if (geofencePreviewLayer) map.removeLayer(geofencePreviewLayer);
+    geofencePreviewLayer = L.rectangle(
+      [
+        [minLat, minLon],
+        [maxLat, maxLon],
+      ],
+      { color: "#81d4fa", weight: 2, dashArray: "4 4", fillOpacity: 0.05 }
+    ).addTo(map);
+    setGeofenceDrawMode(false);
+    saveGeofenceBounds(minLat, maxLat, minLon, maxLon).catch((err) =>
+      log("Геозона: " + formatApiError(err), true)
+    );
+    geofenceCornerA = null;
+    if (geofenceCornerMarker && map) {
+      map.removeLayer(geofenceCornerMarker);
+      geofenceCornerMarker = null;
+    }
+  }
+
+  function assertPreflightForMission() {
+    if (preflightReadyMission) return true;
+    log(preflightBlockReason || "Перевірте «Перед виїздом»: ARM, GPS, геозона", true);
+    return false;
+  }
+
+  async function assertPreflightForVehicle(vid) {
+    if (vid === selectedVehicleId) {
+      return assertPreflightForMission();
+    }
+    const fv = fleetVehicles.find((x) => x.id === vid);
+    const name = (fv && fv.name) || vid;
+    try {
+      const pf = await apiGet(
+        `/api/preflight?vehicle_id=${encodeURIComponent(vid)}&require_route=1`
+      );
+      if (pf.ready_for_mission) return true;
+      log(
+        `${name}: ${pf.block_reason || "не готово до старту (preflight)"}`,
+        true
+      );
+      return false;
+    } catch (e) {
+      log(`${name}: preflight — ` + formatApiError(e), true);
+      return false;
+    }
+  }
+
+  function assertPreflightForCv() {
+    if (preflightReadyCv) return true;
+    log(preflightBlockReason || "CV: потрібні ARM, GPS і відсутність аварії", true);
+    return false;
+  }
+
+  function monitoringCvBlockReason(pf) {
+    if (!pf) return monitoringBlockReason || "Моніторинг: перевірте ARM, GPS, звʼязок";
+    const c = pf.checks || {};
+    const keys = ["mavlink", "gps", "armed", "emergency_clear", "geofence"];
+    const failed = keys
+      .filter((k) => c[k] && c[k].ok === false && !c[k].optional)
+      .map((k) => c[k].label);
+    if (failed.length) return "Моніторинг: " + failed.join("; ");
+    return pf.block_reason || monitoringBlockReason || "Не готово до зйомки";
+  }
+
+  function syncMonitoringPreflight(pf) {
+    const c = (pf && pf.checks) || {};
+    if (c.mavlink) setPreflightItem("mpfMavlink", c.mavlink.ok);
+    if (c.gps) setPreflightItem("mpfGps", c.gps.ok);
+    if (c.armed) setPreflightItem("mpfArm", c.armed.ok);
+    if (c.emergency_clear) setPreflightItem("mpfEmergency", c.emergency_clear.ok);
+    monitoringBlockReason = pf && !pf.ready_for_cv ? monitoringCvBlockReason(pf) : "";
+    const banner = el("monitoringPreflightBanner");
+    if (banner) {
+      if (pf && !pf.ready_for_cv && monitoringBlockReason) {
+        banner.textContent = monitoringBlockReason;
+        banner.classList.remove("hidden");
+      } else {
+        banner.classList.add("hidden");
+        banner.textContent = "";
+      }
+    }
+  }
+
+  function assertPreflightForMonitoring() {
+    if (preflightReadyCv) return true;
+    log(monitoringCvBlockReason(lastPreflightPayload), true);
+    return false;
+  }
+
+  async function saveStationMeta() {
+    const sid = (el("stationIdInput") && el("stationIdInput").value) || "";
+    const op = (el("stationOperatorInput") && el("stationOperatorInput").value) || "";
+    const r = await fetch("/api/monitoring/station", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ station_id: sid.trim(), operator: op.trim() }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || d.error || r.statusText);
+    const hint = el("stationHint");
+    if (hint) {
+      hint.textContent = `Станція: ${d.station_id} · оператор: ${d.operator || "—"}`;
+    }
+    log(`Станція збережено: ${d.station_id}${d.operator ? " · " + d.operator : ""}`);
+    return d;
   }
 
   function playOfflineBeep() {
@@ -966,39 +1363,17 @@
     const panel = el("fleetPanel");
     if (!box) return;
     if (panel) panel.classList.remove("hidden");
-    const countInp = el("fleetCountInput");
-    if (countInp && fleet) {
-      fleetMinCount = fleet.min_count || 1;
-      fleetMaxCount = fleet.max_count || 6;
-      countInp.min = String(fleetMinCount);
-      countInp.max = String(fleetMaxCount);
-      const serverCount = fleet.count || 1;
-      if (
-        document.activeElement !== countInp &&
-        lastFleetCountFromServer !== serverCount
-      ) {
-        countInp.value = String(serverCount);
-        lastFleetCountFromServer = serverCount;
-      }
-    }
     const hintSize = el("fleetSizeHint");
     if (hintSize && fleet && fleet.message) {
       hintSize.textContent = fleet.message;
     }
-    const n = (fleet && fleet.count) || 1;
-    if (!fleet || n <= 1) {
-      box.innerHTML = "";
-      fleetMulti = false;
-      fleetVehicles = fleet ? fleet.vehicles || [] : [];
-      if (fleet && fleet.selected_vehicle_id) {
-        selectedVehicleId = fleet.selected_vehicle_id;
-      }
-      return;
-    }
-    fleetMulti = true;
+    // Пул станції: завжди показуємо список, навіть якщо активний лише 1 дрон.
+    if (!fleet) return;
     fleetVehicles = fleet.vehicles || [];
     selectedVehicleId = fleet.selected_vehicle_id || selectedVehicleId;
     box.innerHTML = "";
+    const activeIds = new Set(fleet.active_vehicle_ids || []);
+    const activeCount = activeIds.size || (fleet.count || 1);
     fleetVehicles.forEach((fv) => {
       const row = document.createElement("div");
       row.className =
@@ -1006,24 +1381,128 @@
       const link = fv.connected ? "●" : "○";
       const mode = fv.control_mode === "manual" ? "ручний" : "авто";
       const ph = missionPhaseLabel(fv.mission);
+      const cvMode = (fv.cv_mode || "").toLowerCase();
+      const cvInfo = fv.cv || {};
+      const vidLabel =
+        cvInfo.video_label ||
+        (fv.video_file ? fv.video_file.split("/").pop() : "");
+      const cvConn = !!cvInfo.connected;
+      const cvMissing = !!cvInfo.video_missing;
+      const cvOnboard = cvMode === "onboard";
+      let cvBtnTitle = cvConn
+        ? "Відключити відео"
+        : "Підключити відео (імітація камери / згодом камера з дрона)";
+      if (cvMissing && !cvConn) {
+        cvBtnTitle += ` — ${vidLabel || "файл"} не знайдено (буде синтетичний ряд)`;
+      } else if (vidLabel) {
+        cvBtnTitle += ` — ${vidLabel}`;
+      }
+      const cvBadge =
+        cvOnboard
+          ? '<span class="fleet-cv-badge onboard" title="CV на борту (RPi) — локальний трекер GCS заблоковано">CV: onboard</span>'
+          : `<span class="fleet-cv-badge local" title="${vidLabel || "відео не задано"}">${vidLabel ? "📹 " + vidLabel : "немає video_file"}${cvMissing ? " ⚠" : ""}</span>`;
+      const cvBtnClass =
+        (cvConn ? " on" : "") +
+        (cvMissing && !cvConn ? " missing" : "") +
+        (cvOnboard ? " disabled" : "");
+      const isActive = !!(fv.active || activeIds.has(fv.id));
+      const disableDeactivate = isActive && activeCount <= 1;
       row.innerHTML = `
+        <label class="fleet-active-toggle" title="У роботі (активний дрон)">
+          <input type="checkbox" class="fleet-active" data-vid="${fv.id}" ${isActive ? "checked" : ""} ${disableDeactivate ? "disabled" : ""} />
+          Active
+        </label>
         <button type="button" class="fleet-select" data-vid="${fv.id}">
           <span class="fleet-link ${fv.connected ? "on" : "off"}">${link}</span>
           <strong>${fv.name}</strong>
           <span class="fleet-phase">${mode} · ${ph} · ${fv.waypoint_count || 0} тч.</span>
+          ${cvBadge}
         </button>
+        <button type="button" class="fleet-cv-connect${cvBtnClass}" data-vid="${fv.id}" title="${cvBtnTitle}" ${cvOnboard ? "disabled" : ""}>📹</button>
         <button type="button" class="fleet-run" data-vid="${fv.id}" title="Старт маршруту цього дрона">▶</button>`;
       row.querySelector(".fleet-select").onclick = () => selectFleetVehicle(fv.id);
+      const cvBtn = row.querySelector(".fleet-cv-connect");
+      if (cvBtn && !cvOnboard) {
+        cvBtn.onclick = (e) => {
+          e.stopPropagation();
+          toggleFleetVehicleVideo(fv.id);
+        };
+      }
       row.querySelector(".fleet-run").onclick = (e) => {
         e.stopPropagation();
         startFleetVehicleMission(fv.id);
       };
+      const chk = row.querySelector(".fleet-active");
+      if (chk) {
+        chk.onchange = async (e) => {
+          const on = !!e.target.checked;
+          try {
+            const d = await apiPost("/api/fleet/active/toggle", { vehicle_id: fv.id, active: on }, { noVehicle: true });
+            if (d.message) log(d.message);
+            renderFleetSelector(d);
+            updateFleetMarkers(d);
+            pollStatus();
+          } catch (err) {
+            e.target.checked = !on;
+            log("Флот (active): " + formatApiError(err), true);
+          }
+        };
+      }
       box.appendChild(row);
     });
     const hint = el("fleetHint");
     if (hint) {
       hint.textContent =
-        "Клік — обрати дрон і його маршрут на карті · ▶ — старт без перемикання · кілька дронів можуть їхати паралельно.";
+        "Active = у роботі · клік = обрати · 📹 = відео дрона · ▶ = маршрут. MP4: assets/videos/ (на диску WSL)";
+    }
+  }
+
+  async function toggleFleetVehicleVideo(vid) {
+    const fv = fleetVehicles.find((x) => x.id === vid);
+    const cvInfo = (fv && fv.cv) || {};
+    const connected = !!cvInfo.connected;
+    try {
+      if (connected) {
+        const d = await apiPost(
+          "/api/fleet/cv/disconnect",
+          { vehicle_id: vid },
+          { noVehicle: true }
+        );
+        cvRunning = false;
+        hideCvOverlay();
+        log(`📹 ${fv ? fv.name : vid}: відео відключено`);
+        if (d.vehicle_id && d.vehicle_id !== selectedVehicleId) {
+          /* інший дрон */
+        }
+      } else {
+        const d = await apiPost(
+          "/api/fleet/cv/connect",
+          { vehicle_id: vid },
+          { noVehicle: true }
+        );
+        if (d.status === "error") {
+          log(`📹 ${fv ? fv.name : vid}: ` + (d.message || d.error || "помилка"), true);
+          return;
+        }
+        cvRunning = true;
+        selectedVehicleId = d.vehicle_id || vid;
+        const resolved = d.video_resolved || "";
+        log(
+          (d.message || `📹 ${fv ? fv.name : vid}: відео підключено`) +
+            (resolved ? ` · ${resolved.split("/").pop()}` : "")
+        );
+        if (d.video_missing && d.will_use_synthetic) {
+          log(
+            "Увага: файл не знайдено на диску — перевірте assets/videos/ у WSL (ls assets/videos/)",
+            true
+          );
+        }
+        showCvOverlay();
+      }
+      syncCvUi();
+      await pollStatus();
+    } catch (e) {
+      log("Відео: " + formatApiError(e), true);
     }
   }
 
@@ -1035,53 +1514,135 @@
     );
   }
 
-  async function startFleetVehicleMission(vid) {
-    const fv = fleetVehicles.find((x) => x.id === vid);
-    if (!fv || !(fv.waypoint_count > 0)) {
-      log(`${fv ? fv.name : vid}: спочатку додайте точки маршруту`, true);
+  async function missionWaypointsForVehicle(vid) {
+    if (vid === selectedVehicleId) {
+      syncWaypointsToCache();
+    }
+    let wps = fleetRoutes[vid];
+    if (!wps || !wps.length) {
+      try {
+        wps = await fetchMissionWaypoints(vid);
+        fleetRoutes[vid] = wps;
+      } catch (_) {
+        wps = [];
+      }
+    }
+    return wps;
+  }
+
+  async function pushMissionWaypointsForVehicle(vid) {
+    if (!fleetRouteCommitted[vid]) {
       return;
     }
-    if (fv.control_mode !== "autonomous") {
+    let wps;
+    if (vid === selectedVehicleId) {
+      syncWaypointsToCache();
+      wps = waypoints;
+    } else {
+      wps = fleetRoutes[vid] || [];
+    }
+    if (!wps.length) return;
+    await apiPut(
+      "/api/mission",
+      {
+        waypoints: wps.map((w) => ({ lat: w.lat, lon: w.lon })),
+      },
+      { vehicleId: vid }
+    );
+    fleetRoutes[vid] = wps.map((w) => ({ lat: w.lat, lon: w.lon }));
+  }
+
+  /**
+   * Повний маршрут для одного дрона (флот ▶ = «Старт маршруту»).
+   * Завжди /api/fleet/mission/run + waypoints на сервері.
+   */
+  async function runVehicleMission(vid, opts) {
+    const options = opts || {};
+    const fv = fleetVehicles.find((x) => x.id === vid);
+    const name = (fv && fv.name) || vid;
+    const wps = await missionWaypointsForVehicle(vid);
+    if (!wps.length) {
+      log(`${name}: спочатку додайте точки маршруту (Редагувати: ВКЛ)`, true);
+      return null;
+    }
+    if (wps.length < 2) {
+      log(
+        `${name}: потрібно ≥2 точки (1 = старт, 2+ = рух по маршруту)`,
+        true
+      );
+      return null;
+    }
+    const mode =
+      fv && fv.control_mode ? fv.control_mode : controlMode;
+    if (mode !== "autonomous") {
       try {
         await setVehicleAutonomous(vid);
       } catch (e) {
         log("Автономний: " + formatApiError(e), true);
-        return;
+        return null;
       }
     }
+    if (options.checkPreflight !== false) {
+      const pfOk = await assertPreflightForVehicle(vid);
+      if (!pfOk) return null;
+    }
+    await pushMissionWaypointsForVehicle(vid);
     try {
-      const d = await apiPost(
-        "/api/fleet/mission/run",
-        { speed: getMissionSpeed() },
-        { vehicleId: vid, noVehicle: true }
+      const st = await apiGet(
+        `/api/mission/status?vehicle_id=${encodeURIComponent(vid)}`
       );
-      log(`▶ ${fv.name}: маршрут запущено (${d.phase || "running"})`);
-      await refreshAllFleetMissions();
-      clearMovementTrail();
-      pollStatus();
+      if (!missionBlocksRouteSync(st)) {
+        await syncVehicleRouteStart(vid);
+      }
+    } catch (_) {
+      await syncVehicleRouteStart(vid);
+    }
+    if (options.stopCv !== false) {
+      try {
+        await apiPost("/api/cv/stop", {}, { noVehicle: true });
+      } catch (_) { /* ignore */ }
+    }
+    const speed = getMissionSpeed();
+    const draftOnly = !fleetRouteCommitted[vid];
+    const payload = {
+      vehicle_id: vid,
+      waypoints: wps.map((w) => {
+        const o = { lat: w.lat, lon: w.lon };
+        if (w.role) o.role = w.role;
+        if (w.row_index != null) o.row_index = w.row_index;
+        return o;
+      }),
+      speed,
+      draft_only: draftOnly,
+    };
+    const d = await apiPost("/api/fleet/mission/run", payload, { noVehicle: true });
+    if (vid === selectedVehicleId) {
+      missionPhase = d.phase || "running";
+      missionActive = !!d.active;
+      missionCanResume = !!d.can_resume;
+      syncControlModeUi();
+    }
+    const spd = d.speed_m_s != null ? d.speed_m_s : speed;
+    const label = d.phase === "paused" ? "Продовжено" : "Старт";
+    log(`▶ ${name}: ${label} 1→…→${d.total || wps.length} · ${Number(spd).toFixed(1)} м/с`);
+    if (options.refreshFleet !== false) {
+      await refreshFleetMissionCaches();
+    }
+    clearMovementTrail();
+    await pollStatus();
+    return d;
+  }
+
+  async function startFleetVehicleMission(vid) {
+    try {
+      await runVehicleMission(vid, { checkPreflight: true });
     } catch (e) {
-      log(`Старт ${fv.name}: ` + formatApiError(e), true);
+      const fv = fleetVehicles.find((x) => x.id === vid);
+      log(`Старт ${fv ? fv.name : vid}: ` + formatApiError(e), true);
     }
   }
 
-  async function applyFleetCount() {
-    const inp = el("fleetCountInput");
-    if (!inp) return;
-    let n = parseInt(inp.value, 10);
-    if (Number.isNaN(n)) n = fleetMinCount;
-    n = Math.max(fleetMinCount, Math.min(fleetMaxCount, n));
-    inp.value = String(n);
-    const d = await apiPost("/api/fleet/configure", { count: n }, { noVehicle: true });
-    lastFleetCountFromServer = d.count || n;
-    if (countInp) countInp.value = String(lastFleetCountFromServer);
-    if (d.message) log(d.message);
-    renderFleetSelector(d);
-    updateFleetMarkers(d);
-    selectedVehicleId = d.selected_vehicle_id || selectedVehicleId;
-    await loadMission();
-    await refreshAllFleetMissions();
-    pollStatus();
-  }
+  // fleetCountInput / btnFleetApply прибрані: оператор керує активними дронами через чекбокси Active.
 
   async function selectFleetVehicle(vid) {
     if (!vid || vid === selectedVehicleId) return;
@@ -1098,10 +1659,17 @@
       if (d.record) applyMissionRecordToForm(d.record);
       waypoints = fleetRoutes[vid] ? fleetRoutes[vid].map((w) => ({ ...w })) : [];
       await loadMission();
+      await loadRowPlanDefaults();
       clearMovementTrail();
       syncControlModeUi();
-      log(`Обрано: ${d.name || vid} — маршрути інших дронів лишаються на карті`);
-      pollStatus();
+      log(
+        `Обрано: ${d.name || vid} — інші дрони продовжують маршрут без зупинки`
+      );
+      if (cvRunning) {
+        const img = el("cvVideo");
+        if (img) img.src = "/api/cv/stream?t=" + Date.now();
+      }
+      await pollStatus();
     } catch (e) {
       log("Флот: " + formatApiError(e), true);
     }
@@ -1161,6 +1729,13 @@
   function updateSimBanner(s) {
     const banner = el("simBanner");
     if (!banner) return;
+    const profile = (s.mavlink_profile || "").toLowerCase();
+    if (!s.simulator_active && profile === "sim") {
+      banner.textContent =
+        "Симулятор не запущено. Зупиніть процес і: python main.py --full";
+      banner.classList.remove("hidden");
+      return;
+    }
     if (s.simulator_active) {
       banner.classList.remove("hidden");
       banner.textContent = "Режим симуляції — rover віртуальний (без Pixhawk)";
@@ -1226,6 +1801,241 @@
   async function pushMissionToServer() {
     await apiPut("/api/mission", { waypoints: waypoints });
     renderMission();
+  }
+
+  function readRowPlanForm() {
+    return {
+      origin_lat: parseFloat(el("planOriginLat")?.value),
+      origin_lon: parseFloat(el("planOriginLon")?.value),
+      azimuth_deg: parseFloat(el("planAzimuth")?.value) || 0,
+      auto_azimuth: !!el("planAutoAzimuth")?.checked,
+      row_spacing_m: parseFloat(el("planRowSpacing")?.value) || 1,
+      row_length_m: parseFloat(el("planRowLength")?.value) || 50,
+      row_count: parseInt(el("planRowCount")?.value, 10) || 5,
+      use_zigzag: !!el("planZigzag")?.checked,
+      use_field: !!el("planUseField")?.checked,
+    };
+  }
+
+  function updateFieldHint(cfg) {
+    const hint = el("fieldHint");
+    if (!hint) return;
+    const active = (cfg && cfg.active) || {};
+    const poly = active.polygon || [];
+    if (!active || !active.enabled || poly.length < 3) {
+      hint.textContent =
+        "Контур поля: не задано. Додайте точки по краю поля (складна форма підтримується).";
+      return;
+    }
+    hint.textContent = `Контур поля: ${poly.length} точок` + (active.name ? ` · ${active.name}` : "");
+  }
+
+  function renderFieldPolygon(cfg) {
+    if (!map) return;
+    if (fieldLayer) {
+      map.removeLayer(fieldLayer);
+      fieldLayer = null;
+    }
+    const active = (cfg && cfg.active) || {};
+    const poly = active.polygon || [];
+    if (!active || !active.enabled || poly.length < 3) return;
+    fieldLayer = L.polygon(
+      poly.map((p) => [p.lat, p.lon]),
+      {
+        color: "#66bb6a",
+        weight: 2,
+        fillColor: "#66bb6a",
+        fillOpacity: 0.08,
+        interactive: false,
+      }
+    ).addTo(map);
+  }
+
+  function renderFieldSelect(cfg) {
+    const sel = el("fieldSelect");
+    if (!sel) return;
+    const fields = (cfg && cfg.fields) || [];
+    const active = (cfg && cfg.active) || {};
+    fieldActiveId = active.id || null;
+    sel.innerHTML = "";
+    const optNone = document.createElement("option");
+    optNone.value = "";
+    optNone.textContent = "— (нема поля)";
+    sel.appendChild(optNone);
+    fields.forEach((f) => {
+      const o = document.createElement("option");
+      o.value = f.id;
+      o.textContent = f.name || f.id;
+      if (f.id && f.id === fieldActiveId) o.selected = true;
+      sel.appendChild(o);
+    });
+    const nameInp = el("fieldName");
+    if (nameInp && active.name && !fieldNewMode) nameInp.value = active.name;
+  }
+
+  async function loadFieldConfig() {
+    try {
+      const r = await fetch("/api/field");
+      const d = await r.json();
+      if (!r.ok) return;
+      updateFieldHint(d);
+      renderFieldPolygon(d);
+      renderFieldSelect(d);
+      const btnClr = el("btnFieldClear");
+      if (btnClr) btnClr.disabled = !((d.active || {}).enabled);
+    } catch (_) { /* ignore */ }
+  }
+
+  function renderFieldPreviewLine() {
+    if (!map) return;
+    if (fieldPreviewLine) {
+      map.removeLayer(fieldPreviewLine);
+      fieldPreviewLine = null;
+    }
+    if (fieldPoints.length < 1) return;
+    fieldPreviewLine = L.polyline(
+      fieldPoints.map((p) => [p.lat, p.lon]),
+      { color: "#81c784", weight: 2, dashArray: "6 6" }
+    ).addTo(map);
+  }
+
+  function setFieldDrawMode(on) {
+    fieldDrawMode = !!on;
+    const btn = el("btnFieldDraw");
+    const btnFin = el("btnFieldFinish");
+    const btnClr = el("btnFieldClear");
+    if (btn) btn.classList.toggle("active", fieldDrawMode);
+    if (btnFin) btnFin.disabled = !fieldDrawMode;
+    if (btnClr) btnClr.disabled = fieldPoints.length < 3;
+    const mh = el("mapHint");
+    if (mh) {
+      mh.textContent = fieldDrawMode
+        ? "ПОЛЕ: кліки по краю поля → «Завершити контур»"
+        : "▲ rover · редагування: клік = додати · перетягнути = змістити · ✕ = зняти";
+    }
+    if (!fieldDrawMode) {
+      if (fieldPreviewLine && map) {
+        map.removeLayer(fieldPreviewLine);
+        fieldPreviewLine = null;
+      }
+      fieldPoints = [];
+    } else {
+      fieldPoints = [];
+      log("Поле: додавайте точки по контуру. Потім «Завершити контур».");
+    }
+  }
+
+  async function saveFieldPolygon(points) {
+    const name = (el("fieldName")?.value || "").trim();
+    const r = await fetch("/api/field", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        enabled: true,
+        field_id: fieldNewMode ? null : fieldActiveId,
+        name,
+        polygon: points,
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || d.error || r.status);
+    updateFieldHint(d);
+    renderFieldPolygon(d);
+    renderFieldSelect(d);
+    log("Контур поля збережено");
+    return d;
+  }
+
+  async function selectFieldOnServer(fieldId) {
+    const r = await fetch("/api/field/select", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field_id: fieldId }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || d.error || r.status);
+    updateFieldHint(d);
+    renderFieldPolygon(d);
+    renderFieldSelect(d);
+    return d;
+  }
+
+  async function deleteActiveField() {
+    if (!fieldActiveId) throw new Error("Немає активного поля");
+    const r = await fetch(`/api/field/${encodeURIComponent(fieldActiveId)}`, {
+      method: "DELETE",
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || d.error || r.status);
+    updateFieldHint(d);
+    renderFieldPolygon(d);
+    renderFieldSelect(d);
+    return d;
+  }
+
+  async function loadRowPlanDefaults() {
+    const latIn = el("planOriginLat");
+    const lonIn = el("planOriginLon");
+    if (!latIn || !lonIn) return;
+    try {
+      const r = await fetch(withVehicle("/api/mission/plan/defaults"));
+      const d = await r.json();
+      if (!r.ok) return;
+      latIn.value = Number(d.origin_lat).toFixed(7);
+      lonIn.value = Number(d.origin_lon).toFixed(7);
+      if (d.row_spacing_m != null && el("planRowSpacing"))
+        el("planRowSpacing").value = String(d.row_spacing_m);
+      if (d.row_length_m != null && el("planRowLength"))
+        el("planRowLength").value = String(d.row_length_m);
+      if (d.row_count != null && el("planRowCount"))
+        el("planRowCount").value = String(d.row_count);
+    } catch (_) { /* ignore */ }
+  }
+
+  function applyPlannedWaypointsToMap(navWps, fitMap) {
+    waypoints = (navWps || []).map((w) => ({
+      lat: Number(w.lat),
+      lon: Number(w.lon),
+    }));
+    fleetRoutes[selectedVehicleId] = waypoints.map((w) => ({ ...w }));
+    renderMission();
+    syncMissionUi();
+    if (fitMap && waypoints.length && map) {
+      const bounds = L.latLngBounds(waypoints.map((w) => [w.lat, w.lon]));
+      map.fitBounds(bounds.pad(0.15));
+    }
+  }
+
+  async function runRowPlan(apply) {
+    const body = readRowPlanForm();
+    if (!Number.isFinite(body.origin_lat) || !Number.isFinite(body.origin_lon)) {
+      log("Задайте опорні координати (RTK)", true);
+      return null;
+    }
+    if (body.use_field && !fieldActiveId) {
+      log("Оберіть/створіть поле (контур) або вимкніть «Обрізати по контуру»", true);
+      return null;
+    }
+    body.store_draft = !!apply;
+    const d = await apiPost("/api/mission/plan-rows", body);
+    if (d.error) throw new Error(d.message || d.error);
+    const nav = d.waypoints_nav || d.waypoints || [];
+    if (apply) {
+      await loadMission();
+      applyPlannedWaypointsToMap(waypoints.length ? waypoints : nav, true);
+      fleetRouteCommitted[selectedVehicleId] = false;
+    } else {
+      applyPlannedWaypointsToMap(nav, true);
+    }
+    const st = d.stats || {};
+    log(
+      `План рядів: ${st.waypoint_count || nav.length} тч., ` +
+        `${st.row_count || body.row_count} рядів, міжряддя ${st.row_spacing_m || body.row_spacing_m} м` +
+        (apply
+          ? " — чернетка на сервері (GPS після 1-го ряду)"
+          : " — лише перегляд")
+    );
+    return d;
   }
 
   async function downloadMissionJson() {
@@ -1302,9 +2112,8 @@
       log("Звʼязок втрачено", true);
     }
     linkWasConnected = !!s.connected;
-    setPreflightItem("pfMavlink", s.connected && !s.mavlink_reconnecting);
-    setPreflightItem("pfGps", hasGps);
-    setPreflightItem("pfRoute", waypoints.length > 0);
+    syncPreflightFromStatus(s);
+    syncMonitoringFromStatus(s);
     el("hudSpeed").textContent = fmt(gpsHud.speed);
     el("hudLat").textContent = hasGps ? fmt(gpsHud.lat, 6) : "—";
     el("hudLon").textContent = hasGps ? fmt(gpsHud.lon, 6) : "—";
@@ -1314,12 +2123,22 @@
       const pl = cvInfo.planner || "hybrid";
       const nav = cvInfo.nav_source || "—";
       const src = cvInfo.source || "";
-      el("hudCv").textContent = `${pl}/${nav}`;
+      let hud = `${pl}/${nav}`;
+      if (cvInfo.hazard_stop) {
+        hud += " · СТОП";
+      } else if (cvInfo.hazard_objects) {
+        hud += ` · ⚠ ${cvInfo.hazard_objects}`;
+      }
+      el("hudCv").textContent = hud;
       const cvHint = el("cvVideoHint");
       if (cvHint) {
-        cvHint.textContent = src
-          ? `Потік: ${src} · навігація: ${nav}`
-          : `Навігація: ${nav}`;
+        const vf = cvInfo.video_file ? cvInfo.video_file.split("/").pop() : "";
+        const veh = cvInfo.vehicle_id || selectedVehicleId || "";
+        cvHint.textContent = vf
+          ? `${veh ? veh + " · " : ""}${vf} · ${nav}`
+          : src
+            ? `Потік: ${src} · навігація: ${nav}`
+            : `Навігація: ${nav}`;
       }
     } else {
       el("hudCv").textContent = "OFF";
@@ -1333,9 +2152,18 @@
 
     controlMode = s.control_mode || controlMode;
     const m = s.mission || {};
+    const wasCommitted = !!fleetRouteCommitted[selectedVehicleId];
+    if (m.route_committed) {
+      fleetRouteCommitted[selectedVehicleId] = true;
+    }
     missionPhase = m.phase || "idle";
     missionActive = !!m.active;
     missionCanResume = !!m.can_resume;
+    if (m.route_committed && !wasCommitted) {
+      loadMission().then(() =>
+        log("Маршрут зафіксовано на сервері (реальні GPS після 1-го ряду)")
+      );
+    }
     if (missionPhase === "at_last" && m.total > 0) {
       missionTargetIndex = m.total - 1;
     } else if (missionActive && m.total > 0) {
@@ -1371,6 +2199,7 @@
     syncCvUi();
     if (cvRunning) showCvOverlay();
     else hideCvOverlay();
+    syncCvButtonsFromMode(s);
   }
 
   function fmt(n, d) {
@@ -1380,7 +2209,7 @@
 
   async function pollStatus() {
     try {
-      const r = await fetch("/api/status");
+      const r = await gcsFetch("/api/status");
       const s = await r.json();
       if (!r.ok) throw new Error(s.error || r.status);
       updateHud(s);
@@ -1409,6 +2238,25 @@
     const img = el("cvVideo");
     if (box) box.classList.add("hidden");
     if (img) img.removeAttribute("src");
+  }
+
+  function cvModeFromStatus(s) {
+    const cv = (s && s.cv) || {};
+    return String(cv.mode || "").toLowerCase();
+  }
+
+  function syncCvButtonsFromMode(s) {
+    const mode = cvModeFromStatus(s);
+    const btnStart = el("btnCvStart");
+    const btnStop = el("btnCvStop");
+    if (!btnStart || !btnStop) return;
+    const onboard = mode === "onboard";
+    btnStart.disabled = onboard;
+    btnStop.disabled = onboard;
+    if (onboard && !cvRunning) {
+      btnStart.textContent = "CV на борту (RPi)";
+      btnStart.classList.remove("active");
+    }
   }
 
   function syncCvUi() {
@@ -1452,6 +2300,18 @@
       if (s.max_speed_m_s != null) max = s.max_speed_m_s;
       if (s.default_speed_m_s != null) def = s.default_speed_m_s;
       if (s.presets) missionPresets = s.presets;
+      if (s.geofence) renderGeofence(s.geofence);
+      if (s.map && map) {
+        const lat = Number(s.map.center_lat);
+        const lon = Number(s.map.center_lon);
+        const zoom = Number(s.map.zoom);
+        if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+          map.setView(
+            [lat, lon],
+            !Number.isNaN(zoom) ? zoom : DEFAULT_MAP_ZOOM
+          );
+        }
+      }
       inp.min = String(min);
       inp.max = String(max);
       document.querySelectorAll("[data-speed-preset]").forEach((btn) => {
@@ -1788,32 +2648,12 @@
         log("Увімкніть «Автономний» режим", true);
         return;
       }
-      if (waypoints.length === 0) {
-        log("Немає точок — клікніть на карті (Маршрут: ВКЛ)", true);
-        return;
-      }
       mapFollow = true;
-      await syncVehicleRouteStart(selectedVehicleId);
       if (!missionCanResume) {
         focusStartWaypoint(true);
-      } else {
-        clearMovementTrail();
       }
       try {
-        await apiPost("/api/cv/stop", {}, { noVehicle: true });
-        const speed = getMissionSpeed();
-        const d = await apiPost("/api/mission/run", {
-          waypoints: waypoints.map((w) => ({ lat: w.lat, lon: w.lon })),
-          speed,
-        });
-        missionPhase = d.phase || "running";
-        missionActive = !!d.active;
-        missionCanResume = !!d.can_resume;
-        syncControlModeUi();
-        const spd = d.speed_m_s != null ? d.speed_m_s : speed;
-        const label = missionPhase === "paused" ? "Продовжено" : "Старт";
-        log(`${label} 1→…→${d.total} · ${Number(spd).toFixed(1)} м/с`);
-        pollStatus();
+        await runVehicleMission(selectedVehicleId, { checkPreflight: true });
       } catch (e) {
         log("Маршрут: " + formatApiError(e), true);
       }
@@ -1855,8 +2695,13 @@
           }
           return;
         }
+        if (!assertPreflightForCv()) return;
         try {
-          const d = await apiPost("/api/cv/start", {}, { noVehicle: true });
+          const d = await apiPost(
+            "/api/cv/start",
+            { vehicle_id: selectedVehicleId },
+            { noVehicle: true }
+          );
           if (d.status === "error") {
             log("CV: " + (d.message || "не вдалося запустити"), true);
             return;
@@ -1896,8 +2741,83 @@
 
     el("btnEmergency").onclick = () => {
       if (!confirm("Аварійна зупинка?")) return;
-      apiPost("/api/emergency/stop").then(() => log("EMERGENCY", true));
+      apiPost("/api/emergency/stop", {}, { noVehicle: true }).then(() => {
+        log("EMERGENCY — зупинено весь флот", true);
+        pollStatus();
+      });
     };
+
+    const btnEmerReset = el("btnEmergencyReset");
+    if (btnEmerReset) {
+      btnEmerReset.onclick = () => {
+        if (!confirm("Скинути аварійну зупинку? Переконайтесь, що небезпеки немає.")) return;
+        apiPost("/api/emergency/reset", {}, { noVehicle: true })
+          .then(() => {
+            log("Аварію скинуто — можна ARM і старт");
+            pollStatus();
+          })
+          .catch((e) => log("Скинути аварію: " + formatApiError(e), true));
+      };
+    }
+
+    const btnGfDraw = el("btnGeofenceDraw");
+    if (btnGfDraw) {
+      btnGfDraw.onclick = () => {
+        if (geofenceDrawMode) setGeofenceDrawMode(false);
+        else setGeofenceDrawMode(true);
+      };
+    }
+    const btnGfRoute = el("btnGeofenceRoute");
+    if (btnGfRoute) {
+      btnGfRoute.onclick = async () => {
+        if (waypoints.length === 0) {
+          log("Спочатку додайте точки маршруту", true);
+          return;
+        }
+        try {
+          const r = await fetch("/api/geofence/from-route", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vehicle_id: selectedVehicleId, padding_m: 25 }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.message || d.error || r.status);
+          renderGeofence(d);
+          updateGeofenceHint(d);
+          log("Геозону задано за маршрутом (+25 м)");
+          if (d.min_lat != null) {
+            map.fitBounds([
+              [d.min_lat, d.min_lon],
+              [d.max_lat, d.max_lon],
+            ]);
+          }
+          pollStatus();
+        } catch (e) {
+          log("Геозона: " + formatApiError(e), true);
+        }
+      };
+    }
+    const btnGfOff = el("btnGeofenceDisable");
+    if (btnGfOff) {
+      btnGfOff.onclick = async () => {
+        if (!confirm("Вимкнути геозону? Старт маршруту буде заблоковано, поки не задасте знову.")) return;
+        try {
+          const r = await fetch("/api/geofence", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled: false }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.message || d.error || r.status);
+          renderGeofence(d);
+          updateGeofenceHint(d);
+          log("Геозону вимкнено");
+          pollStatus();
+        } catch (e) {
+          log("Геозона: " + formatApiError(e), true);
+        }
+      };
+    }
 
     const btnSaveRecord = el("btnSaveMissionRecord");
     if (btnSaveRecord) {
@@ -1906,12 +2826,105 @@
           log("Збереження: " + formatApiError(e), true)
         );
     }
-    const btnFleetApply = el("btnFleetApply");
-    if (btnFleetApply) {
-      btnFleetApply.onclick = () =>
-        applyFleetCount().catch((e) =>
-          log("Флот: " + formatApiError(e), true)
+    // btnFleetApply прибрано
+    const btnPlanPreview = el("btnPlanRowsPreview");
+    if (btnPlanPreview) {
+      btnPlanPreview.onclick = () =>
+        runRowPlan(false).catch((e) =>
+          log("План рядів: " + formatApiError(e), true)
         );
+    }
+    const btnPlanApply = el("btnPlanRowsApply");
+    if (btnPlanApply) {
+      btnPlanApply.onclick = () =>
+        runRowPlan(true).catch((e) =>
+          log("План рядів: " + formatApiError(e), true)
+        );
+    }
+    const btnFieldDraw = el("btnFieldDraw");
+    if (btnFieldDraw) {
+      btnFieldDraw.onclick = () => setFieldDrawMode(!fieldDrawMode);
+    }
+    const btnFieldFinish = el("btnFieldFinish");
+    if (btnFieldFinish) {
+      btnFieldFinish.onclick = async () => {
+        if (fieldPoints.length < 3) {
+          log("Контур поля: потрібно мінімум 3 точки", true);
+          return;
+        }
+        try {
+          await saveFieldPolygon(fieldPoints);
+          fieldNewMode = false;
+          setFieldDrawMode(false);
+          const btnClr = el("btnFieldClear");
+          if (btnClr) btnClr.disabled = false;
+        } catch (e) {
+          log("Контур поля: " + formatApiError(e), true);
+        }
+      };
+    }
+    const btnFieldClear = el("btnFieldClear");
+    if (btnFieldClear) {
+      btnFieldClear.onclick = async () => {
+        if (!confirm("Очистити контур поля?")) return;
+        try {
+          await fetch("/api/field", { method: "DELETE" });
+          if (fieldLayer && map) {
+            map.removeLayer(fieldLayer);
+            fieldLayer = null;
+          }
+          updateFieldHint({ active: { enabled: false, polygon: [] } });
+          log("Контур поля очищено");
+          await loadFieldConfig();
+        } catch (e) {
+          log("Контур поля: " + formatApiError(e), true);
+        }
+      };
+    }
+
+    const selField = el("fieldSelect");
+    if (selField) {
+      selField.onchange = async () => {
+        const id = selField.value || "";
+        if (!id) {
+          fieldActiveId = null;
+          await loadFieldConfig();
+          return;
+        }
+        try {
+          await selectFieldOnServer(id);
+          log("Поле обрано");
+          pollStatus();
+        } catch (e) {
+          log("Поле: " + formatApiError(e), true);
+        }
+      };
+    }
+    const btnFieldNew = el("btnFieldNew");
+    if (btnFieldNew) {
+      btnFieldNew.onclick = () => {
+        fieldNewMode = true;
+        if (el("fieldName")) el("fieldName").value = "";
+        setFieldDrawMode(true);
+        log("Нове поле: намалюйте контур і натисніть «Завершити контур»");
+      };
+    }
+    const btnFieldDelete = el("btnFieldDelete");
+    if (btnFieldDelete) {
+      btnFieldDelete.onclick = async () => {
+        if (!fieldActiveId) {
+          log("Немає активного поля для видалення", true);
+          return;
+        }
+        if (!confirm("Видалити активне поле?")) return;
+        try {
+          await deleteActiveField();
+          log("Поле видалено");
+          pollStatus();
+        } catch (e) {
+          log("Поле: " + formatApiError(e), true);
+        }
+      };
     }
     const btnExport = el("btnMissionExport");
     if (btnExport) {
@@ -1989,6 +3002,21 @@
     }
   }
 
+  async function logFleetVideosOnDisk() {
+    try {
+      const d = await apiGet("/api/fleet/cv/videos");
+      if (d.count > 0) {
+        const names = (d.files || []).map((f) => f.name).join(", ");
+        log(`Відео на диску (${d.count}): ${names}`);
+      } else {
+        log(
+          `У ${d.video_dir || "assets/videos"} немає .mp4 — додайте vineyard_demo.mp4 …`,
+          true
+        );
+      }
+    } catch (_) { /* ignore */ }
+  }
+
   async function initFleetPanel() {
     try {
       const r = await fetch("/api/fleet");
@@ -1996,8 +3024,367 @@
       lastFleetCountFromServer = d.count || 1;
       fleetVehicles = d.vehicles || [];
       renderFleetSelector(d);
-      await refreshAllFleetMissions();
+      await logFleetVideosOnDisk();
+      await refreshFleetMissionCaches();
+      if (!(await fleetHasActiveMissionOnServer())) {
+        await syncAllFleetRouteStarts();
+      }
     } catch (_) { /* fleet optional */ }
+  }
+
+  function severityClass(sev) {
+    const s = (sev || "medium").toLowerCase();
+    if (s === "high") return "sev-high";
+    if (s === "low") return "sev-low";
+    return "sev-medium";
+  }
+
+  async function loadMonitoringConfig() {
+    try {
+      const [r, rs] = await Promise.all([
+        gcsFetch("/api/monitoring/config"),
+        gcsFetch("/api/monitoring/station"),
+      ]);
+      const cfg = await r.json();
+      if (rs.ok) {
+        const st = await rs.json();
+        const sidIn = el("stationIdInput");
+        const opIn = el("stationOperatorInput");
+        if (sidIn) sidIn.value = st.station_id || "";
+        if (opIn) opIn.value = st.operator || "";
+        const hint = el("stationHint");
+        if (hint) {
+          hint.textContent = `Станція: ${st.station_id || "—"} · оператор: ${st.operator || "—"}`;
+        }
+      }
+      monitoringCrop = cfg.crop || "vineyard";
+      const sel = el("monitoringCrop");
+      if (sel && cfg.crops) {
+        sel.innerHTML = "";
+        cfg.crops.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = c.name;
+          sel.appendChild(opt);
+        });
+        sel.value = monitoringCrop;
+      }
+      const rHint = el("monitoringRemoteHint");
+      if (rHint && cfg.remote) {
+        const rh = cfg.remote;
+        rHint.textContent = `Сервер: ${rh.mode || "remote"} · ${rh.base_url || "—"}`;
+      }
+      const uplHint = el("monitoringUplinkHint");
+      if (uplHint && cfg.uplink) {
+        const src = cfg.uplink.source || "local";
+        if (src === "rpi") {
+          const rpi = cfg.uplink.rpi || {};
+          uplHint.textContent = `Uplink: RPi → ${rpi.host || "?"}:${rpi.port || 8080} · POST ${rpi.upload_path || "/api/monitoring/upload"}`;
+        } else {
+          uplHint.textContent = "Uplink: локальні камери на станції (webcam / synthetic)";
+        }
+      }
+      const cHint = el("monitoringCamerasHint");
+      if (cHint && cfg.cameras) {
+        const L = cfg.cameras.left || {};
+        const R = cfg.cameras.right || {};
+        const src = (cfg.uplink && cfg.uplink.source) || "local";
+        if (src === "rpi") {
+          cHint.textContent = `Камери: з RPi (очікування JPEG, timeout ${(cfg.uplink.rpi && cfg.uplink.rpi.wait_timeout_s) || 10} с)`;
+        } else {
+          cHint.textContent = `Камери: ${L.label || "L"} (${L.type}) · ${R.label || "R"} (${R.type})`;
+        }
+      }
+      const hint = el("monitoringHint");
+      if (hint) {
+        const src = (cfg.uplink && cfg.uplink.source) || "local";
+        hint.textContent =
+          src === "rpi"
+            ? "RPi знімає ліво/право → Wi‑Fi на станцію → сервер YOLO. Окремо від CV ряду."
+            : "Моніторинг: 2 бокові камери → JPEG на сервер аналізу. Камери на станції (webcam/RTSP).";
+      }
+    } catch (_) { /* monitoring optional */ }
+  }
+
+  async function refreshMonitoringFindings() {
+    try {
+      const r = await fetch(
+        `/api/monitoring/findings?vehicle_id=${encodeURIComponent(selectedVehicleId)}&crop=${encodeURIComponent(monitoringCrop)}`
+      );
+      const d = await r.json();
+      renderMonitoringFindings(d.findings || []);
+      renderMonitoringOnMap(d.findings || []);
+    } catch (_) { /* ignore */ }
+  }
+
+  function renderMonitoringFindings(items) {
+    const ul = el("monitoringFindingsList");
+    if (!ul) return;
+    ul.innerHTML = "";
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.textContent = "Знахідок немає";
+      li.style.cursor = "default";
+      ul.appendChild(li);
+      return;
+    }
+    items.slice(0, 30).forEach((f) => {
+      const li = document.createElement("li");
+      li.className = severityClass(f.severity);
+      const side = f.camera_side ? `[${f.camera_side}] ` : "";
+      li.textContent = `${side}${f.label} · ${(f.confidence * 100).toFixed(0)}% · ${f.issue_type}`;
+      li.title = f.created_at || "";
+      li.onclick = () => {
+        if (f.lat != null && f.lon != null) {
+          map.setView([f.lat, f.lon], 19);
+        }
+      };
+      ul.appendChild(li);
+    });
+  }
+
+  function renderMonitoringOnMap(items) {
+    if (!map) return;
+    if (!monitoringFindingsLayer) {
+      monitoringFindingsLayer = L.layerGroup().addTo(map);
+    }
+    monitoringFindingsLayer.clearLayers();
+    Object.keys(monitoringMarkers).forEach((k) => delete monitoringMarkers[k]);
+    items.forEach((f) => {
+      if (f.lat == null || f.lon == null) return;
+      const color =
+        f.severity === "high"
+          ? "#e53935"
+          : f.severity === "low"
+            ? "#fdd835"
+            : "#fb8c00";
+      const m = L.circleMarker([f.lat, f.lon], {
+        radius: 8,
+        color: "#fff",
+        weight: 1,
+        fillColor: color,
+        fillOpacity: 0.85,
+      }).addTo(monitoringFindingsLayer);
+      m.bindTooltip(`${f.label} (${(f.confidence * 100).toFixed(0)}%)`);
+      monitoringMarkers[f.id] = m;
+    });
+  }
+
+  async function refreshMonitoringQueue() {
+    const qHint = el("monitoringQueueHint");
+    if (!qHint) return;
+    try {
+      const d = await apiGet("/api/monitoring/queue");
+      if (!d.enabled) {
+        qHint.textContent = "Офлайн-черга: вимкнено";
+        return;
+      }
+      const n = d.total_pending != null ? d.total_pending : 0;
+      const failed = d.failed != null ? d.failed : 0;
+      qHint.textContent =
+        `Офлайн-черга: ${n} очікує (події ${d.pending_events || 0}, знімки ${d.pending_captures || 0})` +
+        (failed ? ` · помилок: ${failed}` : "");
+      qHint.classList.toggle("warn", n > 0);
+    } catch (_) {
+      qHint.textContent = "Офлайн-черга: —";
+    }
+  }
+
+  function syncMonitoringFromStatus(s) {
+    const mon = (s && s.monitoring) || {};
+    refreshMonitoringQueue();
+    const stEl = el("monitoringStatus");
+    const surv = mon.surveys && mon.surveys[selectedVehicleId];
+    const rHint = el("monitoringRemoteHint");
+    if (rHint && mon.remote) {
+      const ok = mon.remote.ok ? "OK" : "немає звʼязку";
+      rHint.textContent = `Сервер аналізу: ${ok} · ${mon.remote.mode || ""}`;
+    }
+    if (stEl) {
+      if (surv && surv.active) {
+        stEl.textContent = `Обстеження: ${surv.index + 1}/${surv.total} · L+R → сервер · ${surv.findings_count || 0} знах.`;
+      } else if (surv && surv.phase === "completed") {
+        stEl.textContent = surv.message || "Обстеження завершено";
+      } else {
+        let line = `Усього знахідок: ${mon.findings_total != null ? mon.findings_total : "—"}`;
+        const sc = (s && s.spray_coverage) || mon.spray_coverage || {};
+        const tot = sc.totals || {};
+        if (sc.active && sc.session) {
+          line += ` · Spray: ${sc.session.path_length_m || 0} м (активно)`;
+        } else if (tot.area_m2 > 0) {
+          line += ` · Оброблено: ${tot.area_m2} м² (${tot.area_ha || 0} га)`;
+        }
+        stEl.textContent = line;
+      }
+    }
+    if (surv && (surv.active || surv.phase === "completed")) {
+      refreshMonitoringFindings();
+    }
+  }
+
+  async function startMonitoringSurvey() {
+    if (!assertPreflightForMonitoring()) return;
+    const wps = await missionWaypointsForVehicle(selectedVehicleId);
+    if (wps.length < 1) {
+      log("Моніторинг: додайте точки маршруту", true);
+      return;
+    }
+    if (!isAutonomousMode()) {
+      log("Моніторинг: увімкніть «Автономний»", true);
+      return;
+    }
+    try {
+      await apiPost(
+        "/api/monitoring/crop",
+        { crop: monitoringCrop },
+        { noVehicle: true }
+      );
+      const d = await apiPost(
+        "/api/monitoring/survey/start",
+        {
+          vehicle_id: selectedVehicleId,
+          crop: monitoringCrop,
+          waypoints: wps.map((w) => ({ lat: w.lat, lon: w.lon })),
+        },
+        { noVehicle: true }
+      );
+      log(`Моніторинг ▶: ${d.total} точок · ${monitoringCrop}`);
+      pollStatus();
+      await refreshMonitoringFindings();
+    } catch (e) {
+      log("Моніторинг: " + formatApiError(e), true);
+    }
+  }
+
+  async function initApiKeyUi() {
+    const wrap = el("apiKeyWrap");
+    const inp = el("apiKeyInput");
+    const btn = el("btnApiKeySave");
+    if (!wrap || !inp) return;
+    try {
+      const st = await apiGet("/api/security/status");
+      if (st.api_key_required) {
+        wrap.classList.remove("hidden");
+        const saved = sessionStorage.getItem(LS_API_KEY) || "";
+        if (saved) inp.value = saved;
+      }
+      const warn = el("configWarning");
+      if (warn) {
+        // 🔒 Secure mode: API key без TLS = токен піде по HTTP у відкритому вигляді
+        if (st.api_key_required && !st.tls_enabled) {
+          warn.textContent =
+            "🔒 Secure mode: API key увімкнено, але HTTPS (TLS) вимкнено. " +
+            "Увімкніть web.tls.enabled і задайте cert_file/key_file (або запускайте за reverse-proxy з TLS).";
+          warn.classList.remove("hidden");
+        } else {
+          // не прибираємо інші попередження, якщо їх виставив сервер (залишаємо тільки наше)
+          if ((warn.textContent || "").includes("Secure mode")) {
+            warn.classList.add("hidden");
+            warn.textContent = "";
+          }
+        }
+      }
+    } catch (_) { /* ignore */ }
+    if (btn) {
+      btn.onclick = () => {
+        sessionStorage.setItem(LS_API_KEY, (inp.value || "").trim());
+        log("API key збережено для сесії браузера");
+      };
+    }
+  }
+
+  function bindMonitoringControls() {
+    const btnStation = el("btnStationSave");
+    if (btnStation) {
+      btnStation.onclick = () => {
+        saveStationMeta().catch((e) => log("Станція: " + formatApiError(e), true));
+      };
+    }
+    const cropSel = el("monitoringCrop");
+    if (cropSel) {
+      cropSel.onchange = async () => {
+        monitoringCrop = cropSel.value;
+        try {
+          await apiPost(
+            "/api/monitoring/crop",
+            { crop: monitoringCrop },
+            { noVehicle: true }
+          );
+          await refreshMonitoringFindings();
+        } catch (e) {
+          log("Культура: " + formatApiError(e), true);
+        }
+      };
+    }
+    const btnStart = el("btnSurveyStart");
+    if (btnStart) btnStart.onclick = () => startMonitoringSurvey();
+    const btnStop = el("btnSurveyStop");
+    if (btnStop) {
+      btnStop.onclick = async () => {
+        try {
+          await apiPost(
+            "/api/monitoring/survey/stop",
+            { vehicle_id: selectedVehicleId },
+            { noVehicle: true }
+          );
+          log("Обстеження зупинено");
+          pollStatus();
+        } catch (e) {
+          log("Моніторинг стоп: " + formatApiError(e), true);
+        }
+      };
+    }
+    const btnSample = el("btnMonitoringSample");
+    if (btnSample) {
+      btnSample.onclick = async () => {
+        if (!assertPreflightForMonitoring()) return;
+        try {
+          await apiPost(
+            "/api/monitoring/crop",
+            { crop: monitoringCrop },
+            { noVehicle: true }
+          );
+          const d = await apiPost(
+            "/api/monitoring/sample",
+            { vehicle_id: selectedVehicleId, crop: monitoringCrop },
+            { noVehicle: true }
+          );
+          const n = (d.findings || []).length;
+          log(`Зразок: ${n} знахідок · ${d.message || d.model_status}`);
+          await refreshMonitoringFindings();
+          pollStatus();
+        } catch (e) {
+          log("Зразок: " + formatApiError(e), true);
+        }
+      };
+    }
+    const btnQueueFlush = el("btnQueueFlush");
+    if (btnQueueFlush) {
+      btnQueueFlush.onclick = async () => {
+        try {
+          const d = await apiPost("/api/monitoring/queue/flush", {}, { noVehicle: true });
+          log(`Черга: дослано ${d.flushed != null ? d.flushed : 0} елементів`);
+          await refreshMonitoringQueue();
+        } catch (e) {
+          log("Черга: " + formatApiError(e), true);
+        }
+      };
+    }
+    const btnClear = el("btnMonitoringClear");
+    if (btnClear) {
+      btnClear.onclick = async () => {
+        if (!confirm("Очистити всі знахідки моніторингу на карті?")) return;
+        try {
+          await fetch("/api/monitoring/findings", { method: "DELETE" });
+          renderMonitoringFindings([]);
+          renderMonitoringOnMap([]);
+          log("Знахідки моніторингу очищено");
+          pollStatus();
+        } catch (e) {
+          log("Очистити: " + formatApiError(e), true);
+        }
+      };
+    }
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
@@ -2006,12 +3393,19 @@
     initCvResize();
     bindMoveButtons();
     bindControls();
+    bindMonitoringControls();
     initManualSpeed();
     await initMissionSpeed();
+    await loadGeofenceConfig();
+    await loadFieldConfig();
+    await loadMonitoringConfig();
+    await refreshMonitoringFindings();
     await initFleetPanel();
+    await initApiKeyUi();
+    await loadRowPlanDefaults();
     await loadMission();
     try {
-      const r = await fetch("/api/control/mode");
+      const r = await gcsFetch("/api/control/mode");
       const d = await r.json();
       controlMode = d.mode || "autonomous";
       if (d.mission) {

@@ -97,14 +97,21 @@ def test_fleet_configure_count(tmp_path, monkeypatch):
 
 
 def test_fleet_configure_api(client, mock_controller, tmp_path, monkeypatch):
+    from unittest.mock import patch
+
+    from web.fleet import get_fleet
+
     runtime = tmp_path / "fleet_runtime.yaml"
     monkeypatch.setattr("web.fleet_config.RUNTIME_PATH", runtime)
     reset_fleet_singleton()
-    r = client.post(
-        "/api/fleet/configure",
-        data=json.dumps({"count": 2}),
-        content_type="application/json",
-    )
+    fleet = get_fleet()
+    with patch.object(fleet, "_sync_simulators_for_fleet", return_value=False):
+        with patch.object(fleet, "warmup_connections", return_value={"rover_1": "ok"}):
+            r = client.post(
+                "/api/fleet/configure",
+                data=json.dumps({"count": 2}),
+                content_type="application/json",
+            )
     assert r.status_code == 200
     data = r.get_json()
     assert data["count"] == 2

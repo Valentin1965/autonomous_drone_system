@@ -4,6 +4,7 @@
 
 **Цільове розгортання: варіант 2** — RPi (CV) + Pixhawk + станція GCS → [`docs/VARIANT_2_SETUP.md`](docs/VARIANT_2_SETUP.md) · [закупівля + ціни](docs/VARIANT_2_PROCUREMENT.md)
 
+**Огляд проєкту:** [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) · **Команди запуску:** [`docs/RUN_COMMANDS.md`](docs/RUN_COMMANDS.md) · **Чекліст dev/sim:** [`docs/SIM_STABILITY_CHECKLIST.md`](docs/SIM_STABILITY_CHECKLIST.md)  
 **Архітектура:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)  
 **Розгортання:** [`DEPLOYMENT_PIXHAWK_VS_RPI.md`](docs/DEPLOYMENT_PIXHAWK_VS_RPI.md) · [`DEPLOYMENT_VARIANT_2_VS_3.md`](docs/DEPLOYMENT_VARIANT_2_VS_3.md) (закупівля)  
 **Операційні нотатки (PX4, QGC):** [`Algorithm_autonomous_drone_system.md`](Algorithm_autonomous_drone_system.md)

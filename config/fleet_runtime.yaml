@@ -1,11 +1,63 @@
-count: 1
-default_vehicle: rover_1
+active_vehicle_ids:
+- rover_1
+- rover_2
+- rover_4
+count: 3
+default_vehicle: rover_2
 enabled: true
+pool_size: 6
 vehicles:
-- color: '#ff9800'
+- active: true
+  color: '#ff9800'
   id: rover_1
   mavlink_connection: udp:127.0.0.1:14550
   name: Rover 1
   sim_bind: udpin:0.0.0.0:14550
-  start_lat: 50.4501
-  start_lon: 30.5234
+  start_lat: 28.2916
+  start_lon: -16.6291
+  video_file: assets/videos/vineyard_demo.mp4
+- active: true
+  color: '#4caf50'
+  id: rover_2
+  mavlink_connection: udp:127.0.0.1:14551
+  name: Rover 2
+  sim_bind: udpin:0.0.0.0:14551
+  start_lat: 28.2920
+  start_lon: -16.6287
+  video_file: assets/videos/vineyard_demo1.mp4
+- active: false
+  color: '#2196f3'
+  id: rover_3
+  mavlink_connection: udp:127.0.0.1:14552
+  name: Rover 3
+  sim_bind: udpin:0.0.0.0:14552
+  start_lat: 28.2924
+  start_lon: -16.6283
+  video_file: assets/videos/vineyard_demo2.mp4
+- active: true
+  color: '#e91e63'
+  id: rover_4
+  mavlink_connection: udp:127.0.0.1:14553
+  name: Rover 4
+  sim_bind: udpin:0.0.0.0:14553
+  start_lat: 28.2928
+  start_lon: -16.6279
+  video_file: assets/videos/vineyard_demo3.mp4
+- active: false
+  color: '#9c27b0'
+  id: rover_5
+  mavlink_connection: udp:127.0.0.1:14554
+  name: Rover 5
+  sim_bind: udpin:0.0.0.0:14554
+  start_lat: 28.2932
+  start_lon: -16.6275
+  video_file: assets/videos/vineyard_demo4.mp4
+- active: false
+  color: '#00bcd4'
+  id: rover_6
+  mavlink_connection: udp:127.0.0.1:14555
+  name: Rover 6
+  sim_bind: udpin:0.0.0.0:14555
+  start_lat: 28.2936
+  start_lon: -16.6271
+  video_file: assets/videos/vineyard_demo5.mp4

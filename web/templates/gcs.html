@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Станція керування — Ground Rover</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/static/css/gcs.css?v=33" />
+  <link rel="stylesheet" href="/static/css/gcs.css?v=37" />
 </head>
 <body>
   <header class="top-bar">
@@ -13,6 +13,10 @@
     <div class="top-bar-status">
       <div id="linkBadge" class="badge off">Немає звʼязку</div>
       <div id="profileBadge" class="badge profile" title="MAVLink профіль">—</div>
+      <div id="apiKeyWrap" class="api-key-wrap hidden" title="Bearer для /api (поле / HTTPS)">
+        <input type="password" id="apiKeyInput" placeholder="API key" autocomplete="off" />
+        <button type="button" class="btn wp-btn btn-api-key" id="btnApiKeySave">🔑</button>
+      </div>
     </div>
   </header>
   <div id="simBanner" class="sim-banner hidden" role="status">Режим симуляції — без заліза</div>
@@ -42,12 +46,7 @@
     <aside class="side-panel">
       <section class="controls fleet-panel" id="fleetPanel">
         <h2>Флот</h2>
-        <div class="fleet-size-row">
-          <label class="fleet-size-label" for="fleetCountInput">Кількість дронів</label>
-          <input type="number" id="fleetCountInput" min="1" max="6" value="2" />
-          <button type="button" class="btn wp-btn" id="btnFleetApply">Застосувати</button>
-        </div>
-        <p class="hint" id="fleetSizeHint">Після зміни кількості дронів — перезапусти станцію.</p>
+        <p class="hint" id="fleetSizeHint">Оберіть активні дрони (Active) — решта не працюють.</p>
         <div id="fleetSelector" class="fleet-selector"></div>
         <p class="hint" id="fleetHint">На карті — маршрути всіх дронів (кольори з флоту). Клік — редагувати обраний.</p>
       </section>
@@ -71,12 +70,17 @@
         </div>
       </section>
 
+      <div id="preflightBanner" class="preflight-banner hidden" role="alert"></div>
+
       <section class="controls preflight-panel">
         <h2>Перед виїздом</h2>
         <ul id="preflightList" class="preflight-list">
           <li id="pfMavlink" data-ok="0">MAVLink підключено</li>
           <li id="pfGps" data-ok="0">GPS / позиція валідна</li>
-          <li id="pfRoute" data-ok="0">Маршрут: ≥1 точка (опційно)</li>
+          <li id="pfArm" data-ok="0">ARM (двигуни дозволено)</li>
+          <li id="pfGeofence" data-ok="0">Геозона задана</li>
+          <li id="pfEmergency" data-ok="0">Немає аварійної зупинки</li>
+          <li id="pfRoute" data-ok="0">Маршрут: ≥1 точка (для старту)</li>
         </ul>
         <div class="btn-row">
           <button type="button" class="btn arm" id="btnPreflightArm">Тест ARM</button>
@@ -84,6 +88,65 @@
           <button type="button" class="btn move" id="btnPreflightNudge">Короткий рух</button>
         </div>
         <p class="hint">Короткий рух — у «Ручному» режимі (~0.4 с вперед)</p>
+      </section>
+
+      <section class="controls monitoring-panel" id="monitoringPanel">
+        <h2>Моніторинг рослин</h2>
+        <div class="station-row">
+          <label class="station-field">
+            <span>Станція</span>
+            <input type="text" id="stationIdInput" placeholder="gcs-1" autocomplete="off" />
+          </label>
+          <label class="station-field">
+            <span>Оператор</span>
+            <input type="text" id="stationOperatorInput" placeholder="ПІБ" autocomplete="name" />
+          </label>
+          <button type="button" class="btn wp-btn" id="btnStationSave">Зберегти</button>
+        </div>
+        <p class="hint" id="stationHint">ID станції й оператор — у кожному запиті на сервер аналізу.</p>
+        <p class="hint" id="monitoringHint">
+          2 камери (ліво/право) → знімки на віддалений сервер YOLO. Не залежить від CV ряду.
+        </p>
+        <p class="hint" id="monitoringUplinkHint">Uplink: —</p>
+        <p class="hint" id="monitoringRemoteHint">Сервер: —</p>
+        <p class="hint" id="monitoringCamerasHint">Камери: —</p>
+        <div id="monitoringPreflightBanner" class="preflight-banner monitoring-pf-banner hidden" role="alert"></div>
+        <ul id="monitoringPreflightList" class="preflight-list monitoring-preflight-list">
+          <li id="mpfMavlink" data-ok="0">MAVLink / симулятор</li>
+          <li id="mpfGps" data-ok="0">GPS валідний</li>
+          <li id="mpfArm" data-ok="0">ARM (або sim)</li>
+          <li id="mpfEmergency" data-ok="0">Немає аварійної зупинки</li>
+        </ul>
+        <label class="monitoring-crop-label">
+          <span>Культура</span>
+          <select id="monitoringCrop" class="monitoring-select"></select>
+        </label>
+        <div class="btn-row">
+          <button type="button" class="btn mission" id="btnSurveyStart">Обстеження ▶</button>
+          <button type="button" class="btn stop" id="btnSurveyStop">■ Стоп обстеж.</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn wp-btn" id="btnMonitoringSample">Зразок зараз</button>
+          <button type="button" class="btn wp-btn" id="btnMonitoringClear">Очистити знахідки</button>
+        </div>
+        <p class="hint" id="monitoringQueueHint">Офлайн-черга: —</p>
+        <div class="btn-row">
+          <button type="button" class="btn wp-btn" id="btnQueueFlush">Дослати чергу</button>
+        </div>
+        <p class="hint" id="monitoringStatus">—</p>
+        <ul id="monitoringFindingsList" class="monitoring-findings-list"></ul>
+      </section>
+
+      <section class="controls geofence-panel">
+        <h2>Геозона</h2>
+        <p class="hint" id="geofenceHint">Задайте межі поля на карті (обовʼязково перед стартом).</p>
+        <div class="btn-row">
+          <button type="button" class="btn mission" id="btnGeofenceDraw">2 кути на карті</button>
+          <button type="button" class="btn wp-btn" id="btnGeofenceRoute">За маршрутом</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn wp-btn" id="btnGeofenceDisable">Вимкнути геозону</button>
+        </div>
       </section>
 
       <section class="controls mode-panel">
@@ -146,6 +209,68 @@
           </label>
           <button type="button" class="btn mission" id="btnSaveMissionRecord">Зберегти дані роботи</button>
         </div>
+        <div class="row-planner mission-meta">
+          <h3>Планувальник рядів (поле → GPS)</h3>
+          <p class="hint">План — чернетка. На сервер записуються реальні GPS дрона після завершення <b>першого ряду</b>; у ряду — RTK + CV hybrid.</p>
+          <div class="btn-row">
+            <button type="button" class="btn wp-btn" id="btnFieldDraw">Контур поля: ВКЛ</button>
+            <button type="button" class="btn wp-btn" id="btnFieldFinish" disabled>Завершити контур</button>
+            <button type="button" class="btn wp-btn" id="btnFieldClear" disabled>Очистити контур</button>
+          </div>
+          <p class="hint" id="fieldHint">Контур поля: не задано. Додайте точки по краю поля (складна форма підтримується).</p>
+          <div class="meta-field">
+            <span>Активне поле</span>
+            <div class="speed-control-row">
+              <select id="fieldSelect"></select>
+              <button type="button" class="btn wp-btn" id="btnFieldNew">+ нове</button>
+              <button type="button" class="btn wp-btn" id="btnFieldDelete">🗑</button>
+            </div>
+          </div>
+          <label class="meta-field">
+            <span>Назва поля (для нового/оновлення)</span>
+            <input type="text" id="fieldName" placeholder="напр. Виноградник A" />
+          </label>
+          <label class="meta-field">
+            <span>Опорна широта (RTK)</span>
+            <input type="number" id="planOriginLat" step="0.0000001" />
+          </label>
+          <label class="meta-field">
+            <span>Опорна довгота (RTK)</span>
+            <input type="number" id="planOriginLon" step="0.0000001" />
+          </label>
+          <label class="meta-field">
+            <span>Азимут ряду (° від півночі)</span>
+            <input type="number" id="planAzimuth" step="1" value="0" />
+          </label>
+          <label class="meta-field">
+            <span>Міжряддя (м)</span>
+            <input type="number" id="planRowSpacing" step="0.1" min="0.5" max="50" value="1" />
+          </label>
+          <label class="meta-field">
+            <span>Довжина ряду (м)</span>
+            <input type="number" id="planRowLength" step="1" min="5" max="5000" value="50" />
+          </label>
+          <label class="meta-field">
+            <span>Кількість рядів</span>
+            <input type="number" id="planRowCount" step="1" min="1" max="100" value="5" />
+          </label>
+          <label class="meta-check">
+            <input type="checkbox" id="planZigzag" checked />
+            <span>Змійка (zigzag)</span>
+          </label>
+          <label class="meta-check">
+            <input type="checkbox" id="planAutoAzimuth" checked />
+            <span>Автоазимут рядів (по контуру)</span>
+          </label>
+          <label class="meta-check">
+            <input type="checkbox" id="planUseField" checked />
+            <span>Обрізати маршрут по контуру поля</span>
+          </label>
+          <div class="btn-row">
+            <button type="button" class="btn mission" id="btnPlanRowsPreview">Попередній перегляд</button>
+            <button type="button" class="btn mission" id="btnPlanRowsApply">Підготувати до польоту</button>
+          </div>
+        </div>
         <div class="btn-row">
           <button type="button" class="btn mission" id="btnMissionExport">Експорт JSON</button>
         </div>
@@ -187,11 +312,12 @@
 
       <section class="controls">
         <h2>CV / оприскувач</h2>
-        <p class="hint">hybrid · відео: assets/videos/vineyard_demo.mp4 (див. лог сервера)</p>
+        <p class="hint">hybrid: ряд (depth) + YOLOv8 — людина/тварина/об'єкт попереду → стоп</p>
         <button type="button" class="btn cv" id="btnCvStart">CV ряд (hybrid)</button>
         <button type="button" class="btn cv" id="btnCvStop">Зупинити CV</button>
         <button type="button" class="btn sprayer-off" id="btnSprayer">Оприскувач ВИМК</button>
         <button type="button" class="btn emergency" id="btnEmergency">Аварійна зупинка</button>
+        <button type="button" class="btn emergency-reset hidden" id="btnEmergencyReset">Скинути аварію</button>
       </section>
 
       <section class="log">
@@ -205,6 +331,6 @@
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/static/js/gcs.js?v=39"></script>
+  <script src="/static/js/gcs.js?v=50"></script>
 </body>
 </html>

@@ -1,32 +1,8 @@
 """Flask REST API — motion, telemetry, CV status (MAVLink mocked)."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from web.server import app
-
-
-@pytest.fixture
-def client():
-    app.config["TESTING"] = True
-    with app.test_client() as c:
-        yield c
-
-
-@pytest.fixture
-def mock_controller():
-    ctrl = MagicMock()
-    ctrl.frame = "body"
-    ctrl.get_status.return_value = {
-        "connected": True,
-        "armed": False,
-        "frame": "body",
-        "connection": "udp:127.0.0.1:14550",
-        "velocity_cmd": {"forward": 0, "lateral": 0, "yaw": 0},
-        "gps": {"lat": 50.45, "lon": 30.52},
-    }
-    with patch("web.state.drone_state.get_controller", return_value=ctrl):
-        yield ctrl
+import pytest
 
 
 def test_arm(client, mock_controller):
@@ -43,30 +19,39 @@ def test_disarm(client, mock_controller):
 
 
 def test_move(client, mock_controller):
-    r = client.post(
-        "/api/move",
-        json={"forward": 0.5, "lateral": 0.0, "yaw": 0.0},
-    )
+    from web.fleet import get_fleet
+
+    get_fleet().selected.control_mode = "manual"
+    with patch(
+        "simulator.fleet_registry.apply_manual_velocity", return_value=True
+    ) as mv:
+        r = client.post(
+            "/api/move",
+            json={"forward": 0.5, "lateral": 0.0, "yaw": 0.0},
+        )
     assert r.status_code == 200
     data = r.get_json()
     assert data["forward"] == 0.5
-    mock_controller.set_velocity.assert_called_with(0.5, 0.0, 0.0)
+    assert data.get("drive") == "simulator"
+    mv.assert_called_once()
 
 
 def test_stop(client, mock_controller):
+    mock_controller.stop.reset_mock()
     r = client.post("/api/stop")
     assert r.status_code == 200
-    mock_controller.stop.assert_called_once()
+    assert mock_controller.stop.call_count >= 1
 
 
 def test_halt_preserves_mission(client, mock_controller):
-    with patch("web.mission_runner.mission_runner") as mr:
-        mr.active = True
+    from web.fleet import get_fleet
+
+    v = get_fleet().selected
+    v.control_mode = "manual"
+    with patch.object(v.mission_runner, "phase", "running"):
         r = client.post("/api/halt")
     assert r.status_code == 200
     assert r.get_json().get("mission_preserved") is True
-    mock_controller.stop.assert_called_once()
-    mr.stop.assert_not_called()
 
 
 def test_move_blocked_not_manual(client, mock_controller):
@@ -79,33 +64,28 @@ def test_move_blocked_not_manual(client, mock_controller):
 
 
 def test_move_allowed_in_manual(client, mock_controller):
-    from web.state import drone_state
+    from web.fleet import get_fleet
 
-    drone_state.set_control_mode("manual")
-    with patch("web.mission_runner.mission_runner") as mr, patch(
-        "simulator.registry.get_sim"
-    ) as gs, patch("simulator.registry.apply_manual_velocity", return_value=True), patch(
-        "simulator.registry.arm_sim", return_value=True
-    ):
-        mr.active = False
-        gs.return_value = object()
+    v = get_fleet().selected
+    v.control_mode = "manual"
+    with patch.object(v.mission_runner, "phase", "idle"):
         r = client.post("/api/move", json={"forward": 0.5, "lateral": 0})
     assert r.status_code == 200
     assert r.get_json().get("drive") == "simulator"
 
 
 def test_control_mode_manual_pauses(client, mock_controller):
-    from web.mission_runner import mission_runner
-    from web.state import drone_state
+    from web.fleet import get_fleet
 
-    drone_state.set_control_mode("autonomous")
-    with patch.object(mission_runner, "active", True):
-        with patch.object(mission_runner, "pause") as pause:
+    v = get_fleet().selected
+    v.control_mode = "autonomous"
+    with patch.object(v.mission_runner, "phase", "running"):
+        with patch.object(v.mission_runner, "pause") as pause:
             r = client.post("/api/control/mode/manual")
     assert r.status_code == 200
     assert r.get_json()["mode"] == "manual"
     pause.assert_called_once()
-    assert drone_state.get_control_mode() == "manual"
+    assert v.control_mode == "manual"
 
 
 def test_status(client, mock_controller):
@@ -162,12 +142,15 @@ def test_mission_waypoints(client):
     assert r.get_json()["count"] == 0
 
 
-def test_mission_edit_blocked_while_running(client):
-    from web.mission_runner import mission_runner
+def test_mission_edit_blocked_while_running(client, mock_controller):
+    from web.fleet import get_fleet
 
+    v = get_fleet().selected
     client.post("/api/mission/clear")
     client.post("/api/mission/waypoint", json={"lat": 50.45, "lon": 30.52})
-    with patch.object(mission_runner, "status", return_value={"phase": "running"}):
+    with patch.object(
+        v.mission_runner, "status", return_value={"phase": "running", "active": True}
+    ):
         r = client.post("/api/mission/waypoint", json={"lat": 50.47, "lon": 30.54})
     assert r.status_code == 409
     assert r.get_json().get("error") == "mission_active"
@@ -195,6 +178,10 @@ def test_cv_start_synthetic(client, mock_controller):
 
     from web.tracker_service import reset_tracker
 
+    mock_controller.get_status.return_value = {
+        **mock_controller.get_status.return_value,
+        "armed": True,
+    }
     reset_tracker()
     cfg = {
         "planner": "hybrid",

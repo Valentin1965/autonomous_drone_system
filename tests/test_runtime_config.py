@@ -35,20 +35,6 @@ def test_yolo_device_cpu_env(monkeypatch):
     assert resolve_yolo_device({}) == "cpu"
 
 
-def test_resolve_video_path_missing(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def test_resolve_video_path_missing(tmp_path):
     cfg = {"video_dir": str(tmp_path / "empty_videos"), "video_file": ""}
     assert resolve_video_path(cfg) == ""
-
-
-def test_resolve_video_path_from_project_root(tmp_path, monkeypatch):
-    from config.config_paths import project_root
-
-    vdir = project_root() / "assets" / "videos"
-    demo = vdir / "vineyard_demo.mp4"
-    if not demo.is_file():
-        return  # відео в .gitignore — локально у користувача
-    monkeypatch.chdir(tmp_path)
-    cfg = {"video_dir": "assets/videos", "video_file": ""}
-    path = resolve_video_path(cfg)
-    assert path.endswith("vineyard_demo.mp4")

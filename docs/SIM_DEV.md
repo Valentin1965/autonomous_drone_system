@@ -2,6 +2,8 @@
 
 Поки немає Pixhawk / RPi / Oak-D, увесь стек запускається на ПК: **симулятор + GCS + CV на відео**.
 
+**Чекліст стабільності (dev/sim):** [`SIM_STABILITY_CHECKLIST.md`](SIM_STABILITY_CHECKLIST.md)
+
 ---
 
 ## Швидкий старт
@@ -12,8 +14,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 python main.py --full
-# або: bash scripts/run_sim_dev.sh
+# або (рекомендовано — analysis server + GCS):
+bash scripts/run_sim_dev.sh
 ```
+
+`run_sim_dev.sh`: `MONITORING_CONFIG=config/monitoring.dev.yaml`, **`remote.mode: remote`**, піднімає `python -m server.main` на `:8090`, потім `main.py --full`.
+
+**Чекліст стабільності:** перед полем пройдіть [`SIM_STABILITY_CHECKLIST.md`](SIM_STABILITY_CHECKLIST.md).
 
 Відкрийте **http://127.0.0.1:8080/**
 
@@ -24,7 +31,13 @@ python main.py --full
 | 3 | **Автономний** → **▶ Старт маршруту** |
 | 4 | **Ручний** — лише для **обраного** дрона (стрілки) |
 | 5 | Опційно: **Приклад маршруту** — завантажити готові 5 точок |
-| 6 | **CV ряд (hybrid)** — відео в `assets/videos/*.mp4` |
+| 6 | **CV ряд (hybrid)** — відео в `assets/videos/*.mp4` або synthetic (див. нижче) |
+
+### CV без відеофайлу
+
+У `config/cv.yaml`: `source: video`, `fallback_to_synthetic: true` — якщо немає `.mp4`, трекер використовує синтетичний «ряд».
+
+Пізніше на залізі: `source: oakd` у `config/cv_rpi.yaml`.
 
 ---
 
@@ -76,5 +89,6 @@ API: `GET /api/fleet`, `POST /api/fleet/select`, `?vehicle_id=` на mission API
 
 | Файл | Зміст |
 |------|--------|
+| [SIM_STABILITY_CHECKLIST.md](SIM_STABILITY_CHECKLIST.md) | Чекліст стабільності dev/sim (перед полем) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Архітектура |
 | [FIELD_DAY.md](FIELD_DAY.md) | Поле |

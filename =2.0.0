@@ -1,0 +1,2 @@
+Requirement already satisfied: shapely in ./.venv/lib/python3.10/site-packages (2.1.2)
+Requirement already satisfied: numpy>=1.21 in ./.venv/lib/python3.10/site-packages (from shapely) (2.2.6)
